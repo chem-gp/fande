@@ -1,0 +1,35 @@
+{% set data = load_setup_py_data(setup_file="../setup.py", from_recipe_dir=True) %}
+
+package:
+  name: {{ data.get("name")|lower }}
+  version: {{ data.get("version") }}
+
+source:
+  path: ../
+
+build:
+  noarch: python
+  script: "$PYTHON ./setup.py install --single-version-externally-managed --record=record.txt"
+
+requirements:
+  host:
+    - python>=3.6
+
+  run:
+    - pytorch>=1.9
+    - scikit-learn
+    - scipy
+
+# test:
+#   imports:
+#     - torch
+#     - gpytorch
+
+
+about:
+  home: https://github.com/chem-gp/fande-gp
+  license: MIT
+  license_file: LICENSE
+  summary: Scalable Gaussian Process for Chemical Applications
+  doc_url: https://github.com/chem-gp/fande-docs
+  dev_url: https://github.com/chem-gp/fande-gp
