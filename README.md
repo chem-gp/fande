@@ -27,6 +27,8 @@ code sample
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
 
+Theory on barrier crossings with biased gradients is described [here](https://arxiv.org/pdf/2202.13011.pdf).
+
 ## Currently implemented methods
 
 | Method  | Availability |
