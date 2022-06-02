@@ -42,6 +42,10 @@ conda env create -f conda-fande.yml
 ```
 conda activate conda-fande
 ```
-5. All should work!
+5. Install package
+```
+pip install -e ../fande
+```
+7. All should work!
 
 
