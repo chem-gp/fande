@@ -1,6 +1,7 @@
 # Description
 Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
 
+Project scope is for those doing research in probabilistic machine learning applied to chemical physics problems
 
 Currently fande uses [Gpytorch](https://github.com/cornellius-gp/gpytorch)/[Pytorch](https://github.com/pytorch/pytorch)/[Pyro](https://github.com/pyro-ppl/pyro) for ML modeling and [DScribe](https://github.com/SINGROUP/dscribe) library for computing descriptors
 
