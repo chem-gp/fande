@@ -1,7 +1,6 @@
 # Description
 Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
 
-The 
 
 Currently fande uses Gpytorch/Pytorch/Pyro for ML modeling and [DScribe](https://github.com/SINGROUP/dscribe) library for computing descriptors
 
