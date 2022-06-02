@@ -1,2 +1,2 @@
-# fande
-Force and Energy fitting at Scale with Gaussian Approximation Potentials
+# Description
+Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
