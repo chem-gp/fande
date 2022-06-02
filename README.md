@@ -12,7 +12,7 @@ In future we plan to add [GPFlow](https://github.com/GPflow/GPflow)/[TensorFlow]
 
 ## Examples
 
-Collection with examples is available [here](https://github.com/chem-gp/examples).
+Collection with examples is available [here](https://github.com/chem-gp/examples). Sample molecular dynamics trajectories are available [here](https://figshare.com/projects/fande-data/140660).
 
 ### Fitting forces and energies
 
@@ -21,6 +21,8 @@ Example image and code
 ```
 code sample
 ```
+
+
 
 ### Chemical transformation network discovery
 
