@@ -6,7 +6,7 @@ Currently fande uses Gpytorch/Pytorch/Pyro.
 
 In future we plan to add GPFlow/TensorFlow/TensorflowProbability backend
 
-Collection with examples is available ![here](https://github.com/chem-gp/examples).
+Collection with examples is available [here](https://github.com/chem-gp/examples).
 
 ## Fitting forces and energies
 
