@@ -1,10 +1,11 @@
 # Description
 Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
 
+The 
 
-Currently fande uses Gpytorch/Pytorch/Pyro. 
+Currently fande uses Gpytorch/Pytorch/Pyro for ML modeling and [DScribe](https://github.com/SINGROUP/dscribe) library for computing descriptors
 
-In future we plan to add GPFlow/TensorFlow/TensorflowProbability backend
+In future we plan to add GPFlow/TensorFlow/TensorflowProbability backends as well as add support for [librascal](https://github.com/lab-cosmo/librascal) library to compute spherical invariants
 
 
 ## Examples
