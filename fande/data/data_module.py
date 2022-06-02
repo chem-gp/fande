@@ -361,43 +361,28 @@ class FandeDataModule(LightningDataModule):
 
     def prepare_torch_dataset(descriptors, derivatives, energies, forces):
 
+        r_test = 0.2
+        r_train = 1 - r_train
+
         energies_train = energies[0:1600]
         forces_train = forces[0:1600]
-        descriptors_train = descriptors[0:1600]
-        derivatives_train = derivatives[0:1600]
 
+        self.normalizing_const = np.max(energies_train) - np.min(energies_train)
+        self.normalizing_shift = np.min(energies_train)
 
-        energies_test = energies[1600:2000]
-        forces_test = energies[1600:2000]
-        descriptors_test = descriptors[1600:2000]
-        derivatives_test = derivatives[1600:2000]
-
-
-        forces = forces_np / (np.max(energies_train) - np.min(energies_train))
-        energies = (energies_train - np.min(energies_train)) / (
-            np.max(energies_train) - np.min(energies_train)
-        )
-
+        forces = forces_np / self.normalizing_const
+        energies = ( energies_train - self.normalizing_shift ) / self.normalizing_const
         self.forces_norm = forces
         self.energies_norm = energies
 
-        self.normalizing_const = np.max(energies_np) - np.min(energies_np)
-        self.normalizing_shift = np.min(energies_np)
 
-        self.mol_traj = mol_traj
-        self.forces_energies = forces_energies
-
-        derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
-        forces_energies_torch = torch.tensor(forces_energies)
-
-        n_samples = energies.shape[0]
-
-        self.n_train_structures = energies_train.shape[0]
-        self.n_test_structures = energies_test.shape[0]
+        energies_train = energies[0:1600]
+        forces_train = forces[0:1600]
+        energies_test = energies[1600:2000]
+        forces_test = energies[1600:2000]
 
 
 ###
-
         derivatives_flattened = derivatives.reshape(
             derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
         )
@@ -415,11 +400,22 @@ class FandeDataModule(LightningDataModule):
 
 ###
 
+
+
+        derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
+        forces_energies_torch = torch.tensor(forces_energies)
+
+        n_samples = energies.shape[0]
+
+        self.n_train_structures = energies_train.shape[0]
+        self.n_test_structures = energies_test.shape[0]
+
+
+
+
         train_X = derivatives_descriptors_torch[0 : int(r_train * n_samples), :, :]
         train_Y = forces_energies_torch[0 : int(r_train * n_samples), :]
 
-        trrrrx = train_X
-        trrrry = train_Y
 
         test_X = derivatives_descriptors_torch[
             int(r_train * n_samples) : n_samples, :, :
