@@ -358,6 +358,114 @@ class FandeDataModule(LightningDataModule):
 
         return
 
+
+    def prepare_torch_dataset(descriptors, derivatives, energies, forces):
+
+        energies_train = energies[0:1600]
+        forces_train = forces[0:1600]
+        descriptors_train = descriptors[0:1600]
+        derivatives_train = derivatives[0:1600]
+
+
+        energies_test = energies[1600:2000]
+        forces_test = energies[1600:2000]
+        descriptors_test = descriptors[1600:2000]
+        derivatives_test = derivatives[1600:2000]
+
+
+        forces = forces_np / (np.max(energies_train) - np.min(energies_train))
+        energies = (energies_train - np.min(energies_train)) / (
+            np.max(energies_train) - np.min(energies_train)
+        )
+
+        self.forces_norm = forces
+        self.energies_norm = energies
+
+        self.normalizing_const = np.max(energies_np) - np.min(energies_np)
+        self.normalizing_shift = np.min(energies_np)
+
+        self.mol_traj = mol_traj
+        self.forces_energies = forces_energies
+
+        derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
+        forces_energies_torch = torch.tensor(forces_energies)
+
+        n_samples = energies.shape[0]
+
+        self.n_train_structures = energies_train.shape[0]
+        self.n_test_structures = energies_test.shape[0]
+
+
+###
+
+        derivatives_flattened = derivatives.reshape(
+            derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
+        )
+        descriptors_expanded = np.expand_dims(descriptors, 2)
+
+        derivatives_descriptors = np.concatenate(
+            (derivatives_flattened, descriptors_expanded), axis=2
+        )
+        print(soap.get_number_of_features())
+
+        derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
+        forces_energies = np.concatenate(
+            (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
+        ).astype(np.float64)
+
+###
+
+        train_X = derivatives_descriptors_torch[0 : int(r_train * n_samples), :, :]
+        train_Y = forces_energies_torch[0 : int(r_train * n_samples), :]
+
+        trrrrx = train_X
+        trrrry = train_Y
+
+        test_X = derivatives_descriptors_torch[
+            int(r_train * n_samples) : n_samples, :, :
+        ]
+        test_Y = forces_energies_torch[int(r_train * n_samples) : n_samples, :]
+
+        test_energies_torch = test_Y[:, -1]
+        test_forces_torch = test_Y[:, :-1].reshape(-1, 3, len(mol))
+
+        self.test_shape = test_Y.shape
+        self.train_shape = train_Y.shape
+
+        train_X = train_X[:, :, :].transpose(0, 1).flatten(0, 1)
+        train_Y = train_Y[:, :].transpose(0, 1).flatten(0, 1)
+
+        test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
+        test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
+
+        # train_X = train_X[0:1000]
+        # train_Y = train_Y[0:1000]
+
+        print("Train set:")
+        print(train_X.shape, train_Y.shape)
+        print(train_X.dtype, train_Y.dtype)
+        print(train_X.device, train_Y.device)
+
+        print("\nTest set:")
+        print(test_X.shape, test_Y.shape)
+        print(test_X.dtype, test_Y.dtype)
+        print(test_X.device, test_Y.device)
+
+        train_X = train_X.to(torch.float32)
+        train_Y = train_Y.to(torch.float32)
+        test_X = test_X.to(torch.float32)
+        test_Y = test_Y.to(torch.float32)
+
+        self.train_X = train_X
+        self.train_Y = train_Y
+        self.test_X = test_X
+        self.test_Y = test_Y
+
+
+        return
+
+        
+
     @staticmethod
     @lru_cache(maxsize=10)
     def calculate_invariants(traj_file, index=":", positions=None, out_file_descriptors=None, out_file_derivatives=None):
