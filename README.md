@@ -1,3 +1,5 @@
+![fande_logo](https://user-images.githubusercontent.com/25351170/171554530-6a38f595-27fa-4b97-be30-7a279b17abd2.png)
+
 # Description
 Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
 
