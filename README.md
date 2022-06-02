@@ -5,7 +5,7 @@ Project scope is for those doing research in probabilistic machine learning appl
 
 Currently fande uses [Gpytorch](https://github.com/cornellius-gp/gpytorch)/[Pytorch](https://github.com/pytorch/pytorch)/[Pyro](https://github.com/pyro-ppl/pyro) for ML modeling and [DScribe](https://github.com/SINGROUP/dscribe) library for computing descriptors
 
-In future we plan to add [GPFlow](https://github.com/GPflow/GPflow)/[TensorFlow](https://github.com/tensorflow/tensorflow)/[TensorflowProbability](https://github.com/tensorflow/probability) backends as well as add support for [librascal](https://github.com/lab-cosmo/librascal) library to compute spherical invariants
+In future we plan to add [GPFlow](https://github.com/GPflow/GPflow)/[TensorFlow](https://github.com/tensorflow/tensorflow)/[TensorflowProbability](https://github.com/tensorflow/probability) backends as well as add support for [librascal](https://github.com/lab-cosmo/librascal) library to compute descriptors
 
 
 ## Examples
