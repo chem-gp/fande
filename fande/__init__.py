@@ -1,8 +1,8 @@
 import fande.models
 
-print("FandE/GP imported  ")
+print("FandE-GP imported  ")
 
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 
 __all__ = [
     "modules",
