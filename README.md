@@ -23,10 +23,17 @@ code sample
 ```
 
 
-
-### Chemical transformation network discovery
+### Chemical transformation network discovery aided by GPs
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
+
+## Currently implemented methods
+
+| Method  | Availability |
+| ------------- | ------------- |
+| method... | 0  |
+| Content Cell  | Content Cell  |
+
 
 ## Install
 
