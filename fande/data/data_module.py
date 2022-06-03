@@ -460,13 +460,18 @@ class FandeDataModule(LightningDataModule):
 
         return
 
-        
+    @staticmethod
+    def cd_to_root_dir(hparams):
+
+        os.chdir(hparams["root_dir"])
+
+        return
+
 
     @staticmethod
     @lru_cache(maxsize=10)
     def calculate_invariants(traj_file, index=":", positions=None, out_file_descriptors=None, out_file_derivatives=None):
         # saving derivatives to disk may take a lot of space
-        # os.chdir(self.hparams["root_dir"])
 
         mol_traj = io.read(traj_file, index=index)
 
