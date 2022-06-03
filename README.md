@@ -1,7 +1,7 @@
 <img src="https://user-images.githubusercontent.com/25351170/171554530-6a38f595-27fa-4b97-be30-7a279b17abd2.png" width="50">
 
 # Description
-Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
+Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI using GPUs
 
 Project scope is for those doing research in probabilistic machine learning applied to chemical physics problems
 
