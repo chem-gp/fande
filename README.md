@@ -16,11 +16,7 @@ Collection with examples is available [here](https://github.com/chem-gp/examples
 
 ### Fitting forces and energies
 
-Example image and code
-
-```
-code sample
-```
+[Fitting energies/forces from molecular dynamics by the GP](https://github.com/chem-gp/examples/blob/main/fande-examples/energy_forces_fit.ipynb).
 
 
 ### Chemical transformation network discovery aided by GPs
