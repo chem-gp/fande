@@ -18,9 +18,12 @@ Collection with examples is available [here](https://github.com/chem-gp/examples
 
 [Fitting energies/forces from molecular dynamics by the GP](https://github.com/chem-gp/examples/blob/main/fande-examples/energy_forces_fit.ipynb).
 
-Example force fits (Fx,Fy,Fz) with uncertainty estimates:
-![image](https://user-images.githubusercontent.com/25351170/171811297-7a9541c5-df9b-4ea6-87c6-79e1180bbe64.png)
 
+<img src="https://user-images.githubusercontent.com/25351170/171815059-1ce8ad74-e7fd-4c89-b75b-6ebe4ec2ccdc.gif" width="250">
+
+Example force fits (Fx,Fy,Fz) with uncertainty estimates for MD continuation:
+
+![image](https://user-images.githubusercontent.com/25351170/171811297-7a9541c5-df9b-4ea6-87c6-79e1180bbe64.png)
 
 
 ### Chemical transformation network discovery aided by GPs
