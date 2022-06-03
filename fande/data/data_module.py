@@ -359,30 +359,41 @@ class FandeDataModule(LightningDataModule):
         return
 
 
-    def prepare_torch_dataset(descriptors, derivatives, energies, forces):
+    def prepare_torch_dataset(self, energies, forces, descriptors, derivatives):
+        """
+        Prepare train/test datasets from raw computed energies/descriptors and forces/derivatives.
+        """
+        self.n_atoms = forces.shape[1]
 
         r_test = 0.2
-        r_train = 1 - r_train
+        r_train = 1 - r_test
 
-        energies_train = energies[0:1600]
-        forces_train = forces[0:1600]
+        n_samples = energies.shape[0]
+
+
+        n_train = int(r_train * n_samples)
+        n_test = n_samples - n_train
+
+        self.n_train_structures = n_train
+        self.n_test_structures = n_test
+
+        energies_train = energies[0:n_train]
+        forces_train = forces[0:n_train]
 
         self.normalizing_const = np.max(energies_train) - np.min(energies_train)
         self.normalizing_shift = np.min(energies_train)
 
-        forces = forces_np / self.normalizing_const
-        energies = ( energies_train - self.normalizing_shift ) / self.normalizing_const
+        forces = forces / self.normalizing_const
+        energies = ( energies - self.normalizing_shift ) / self.normalizing_const
         self.forces_norm = forces
         self.energies_norm = energies
 
 
-        energies_train = energies[0:1600]
-        forces_train = forces[0:1600]
-        energies_test = energies[1600:2000]
-        forces_test = energies[1600:2000]
+        energies_train = energies[0:n_train]
+        forces_train = forces[0:n_train]
+        energies_test = energies[n_train:-1]
+        forces_test = energies[n_train:-1]
 
-
-###
         derivatives_flattened = derivatives.reshape(
             derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
         )
@@ -391,39 +402,28 @@ class FandeDataModule(LightningDataModule):
         derivatives_descriptors = np.concatenate(
             (derivatives_flattened, descriptors_expanded), axis=2
         )
-        print(soap.get_number_of_features())
 
         derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
+        
         forces_energies = np.concatenate(
             (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
         ).astype(np.float64)
 
-###
-
-
-
         derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
         forces_energies_torch = torch.tensor(forces_energies)
 
-        n_samples = energies.shape[0]
 
-        self.n_train_structures = energies_train.shape[0]
-        self.n_test_structures = energies_test.shape[0]
-
-
-
-
-        train_X = derivatives_descriptors_torch[0 : int(r_train * n_samples), :, :]
-        train_Y = forces_energies_torch[0 : int(r_train * n_samples), :]
+        train_X = derivatives_descriptors_torch[0 : n_train, :, :]
+        train_Y = forces_energies_torch[0 : n_train, :]
 
 
         test_X = derivatives_descriptors_torch[
-            int(r_train * n_samples) : n_samples, :, :
+            n_train : n_samples, :, :
         ]
-        test_Y = forces_energies_torch[int(r_train * n_samples) : n_samples, :]
+        test_Y = forces_energies_torch[n_train : n_samples, :]
 
         test_energies_torch = test_Y[:, -1]
-        test_forces_torch = test_Y[:, :-1].reshape(-1, 3, len(mol))
+        test_forces_torch = test_Y[:, :-1].reshape(-1, 3, self.n_atoms)
 
         self.test_shape = test_Y.shape
         self.train_shape = train_Y.shape
@@ -434,18 +434,16 @@ class FandeDataModule(LightningDataModule):
         test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
         test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
 
-        # train_X = train_X[0:1000]
-        # train_Y = train_Y[0:1000]
 
-        print("Train set:")
-        print(train_X.shape, train_Y.shape)
-        print(train_X.dtype, train_Y.dtype)
-        print(train_X.device, train_Y.device)
+        print("Train set")
+        print("Shape: ", train_X.shape, train_Y.shape)
+        print("Type: ", train_X.dtype, train_Y.dtype)
+        print("Device: ", train_X.device, train_Y.device)
 
-        print("\nTest set:")
-        print(test_X.shape, test_Y.shape)
-        print(test_X.dtype, test_Y.dtype)
-        print(test_X.device, test_Y.device)
+        print("\nTest set")
+        print("Shape: ", test_X.shape, test_Y.shape)
+        print("Type: ", test_X.dtype, test_Y.dtype)
+        print("Device: ", test_X.device, test_Y.device)
 
         train_X = train_X.to(torch.float32)
         train_Y = train_Y.to(torch.float32)
@@ -457,9 +455,16 @@ class FandeDataModule(LightningDataModule):
         self.test_X = test_X
         self.test_Y = test_Y
 
+        self.train_X_e = train_X[-n_train:]
+        self.train_Y_e = train_Y[-n_train:]
+        self.test_X_e = test_X[-n_test:]
+        self.test_Y_e = test_Y[-n_test:]
+
 
         return
 
+    
+    
     @staticmethod
     def cd_to_root_dir(hparams):
 
