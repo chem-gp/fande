@@ -1,4 +1,4 @@
-![fande_logo](https://user-images.githubusercontent.com/25351170/171554530-6a38f595-27fa-4b97-be30-7a279b17abd2.png)
+<img src="https://user-images.githubusercontent.com/25351170/171554530-6a38f595-27fa-4b97-be30-7a279b17abd2.png" width="50">
 
 # Description
 Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI 
@@ -12,7 +12,7 @@ In future we plan to add [GPFlow](https://github.com/GPflow/GPflow)/[TensorFlow]
 
 ## Examples
 
-Collection with examples is available [here](https://github.com/chem-gp/examples).
+Collection with examples is available [here](https://github.com/chem-gp/examples). Sample molecular dynamics trajectories are available [here](https://figshare.com/projects/fande-data/140660).
 
 ### Fitting forces and energies
 
@@ -22,9 +22,20 @@ Example image and code
 code sample
 ```
 
-### Chemical transformation network discovery
+
+### Chemical transformation network discovery aided by GPs
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
+
+Theory on barrier crossings with biased gradients is described [here](https://arxiv.org/pdf/2202.13011.pdf).
+
+## Currently implemented methods
+
+| Method  | Availability |
+| ------------- | ------------- |
+| method... | 0  |
+| Content Cell  | Content Cell  |
+
 
 ## Install
 
