@@ -35,10 +35,10 @@ Theory on barrier crossings with biased gradients may be fround for example [her
 
 ## Currently implemented methods
 
-| Method  | Availability |
+<!-- | Method  | Availability |
 | ------------- | ------------- |
 | method... | 0  |
-| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  | -->
 
 
 ## Install
