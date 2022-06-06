@@ -1,4 +1,4 @@
-# For theory and references see for example:
+# Realization of barrier crossings is similar to one described in:
 # https://arxiv.org/pdf/2202.13011.pdf
 
 
@@ -97,7 +97,7 @@ class ForcedExplorer:
             self.node_list.append(new_id)
             return new_id
 
-    def single_forced_run(self, atoms, atoms_partition, force):
+    def single_forced_run(self, atoms, atoms_partition, force, traj_file=None):
 
         atoms_list_0 = atoms_partition[0]
         atoms_list_1 = atoms_partition[1]
@@ -147,7 +147,10 @@ class ForcedExplorer:
 
         traj = traj1 + traj2
 
-        io.write("data/dump/ase/full_traj.xyz", traj, format="xyz")
+        if traj_file is not None:
+            io.write(traj_file, traj, format="xyz")
+        else:
+            io.write("data/dump/ase/full_traj.xyz", traj, format="xyz")
         # print(f"External force steps: {len(traj1)}" )
         # print(f"Post optimization steps: {len(traj2)}" )
 
