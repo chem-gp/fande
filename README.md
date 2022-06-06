@@ -33,6 +33,12 @@ Example force fits (Fx,Fy,Fz) with uncertainty estimates for MD continuation:
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
 
+Example with ASE `atoms`:
+```python
+fx = ForcedExplorer(atoms, logfile='data/dump/explore_log.log')
+traj, e_path, atoms_opt, energy_opt, energy_pre_opt = fx.single_forced_run(atoms, [[4] , [5] ], force=9.0 )
+```
+
 Theory on barrier crossings is similar to the one [given here](https://arxiv.org/pdf/2202.13011.pdf).
 
 ## Currently implemented methods
