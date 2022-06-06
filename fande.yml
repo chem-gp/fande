@@ -1,4 +1,4 @@
-name: pyc
+name: fande
 channels:
   - pytorch
   - anaconda

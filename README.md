@@ -54,11 +54,11 @@ cd fande
 ```
 3. Create conda environment
 ```
-conda env create -f conda-fande.yml
+conda env create -f fande.yml
 ```
 4. Activate environment
 ```
-conda activate conda-fande
+conda activate fande
 ```
 5. Install package
 ```
