@@ -53,6 +53,7 @@ Currently we provide install through [conda]() and for Linux distributions
 ``` bash
 git clone https://github.com/chem-gp/fande
 cd fande
+git clone https://github.com/chem-gp/examples
 ```
 3. Create conda environment
 ```
