@@ -32,9 +32,15 @@ Example force fits (Fx,Fy,Fz) with uncertainty estimates for MD continuation:
 [Crossing barriers with fande.explore](https://github.com/chem-gp/examples/blob/main/fande-examples/fande_explore_crossing_barriers.ipynb)
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
+<img src="https://user-images.githubusercontent.com/25351170/172145099-3fcd9649-1e08-4f49-8544-f5de05ebccd2.png" width="250">
+
 
 Example with ASE `atoms`:
 ```python
+from ase.build import molecule
+from fande.explore import ForcedExplorer
+
+atoms = molecule("C2H6CHOH")
 fx = ForcedExplorer(atoms, logfile='data/dump/explore_log.log')
 traj, e_path, atoms_opt, energy_opt, energy_pre_opt = fx.single_forced_run(atoms, [[4] , [5] ], force=9.0 )
 ```
