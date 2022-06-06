@@ -27,11 +27,13 @@ Example force fits (Fx,Fy,Fz) with uncertainty estimates for MD continuation:
 ![image](https://user-images.githubusercontent.com/25351170/171811297-7a9541c5-df9b-4ea6-87c6-79e1180bbe64.png)
 
 
-### Chemical transformation network discovery aided by GPs
+### Chemical transformation network discovery
+
+[Crossing barriers with fande.explore](https://github.com/chem-gp/examples/blob/main/fande-examples/fande_explore_crossing_barriers.ipynb)
 
 <img src="https://user-images.githubusercontent.com/25351170/171550682-25ea416f-bc54-4373-9b31-1fdbc1f5381e.gif" width="250">
 
-Theory on barrier crossings with biased gradients may be fround for example [here](https://arxiv.org/pdf/2202.13011.pdf).
+Theory on barrier crossings is similar to the one [given here](https://arxiv.org/pdf/2202.13011.pdf).
 
 ## Currently implemented methods
 
