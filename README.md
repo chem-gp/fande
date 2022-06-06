@@ -67,6 +67,6 @@ conda activate conda-fande
 ```
 pip install -e ../fande
 ```
-7. All should work!
+7. All should work, you can run [examples]([https://github.com/chem-gp/examples](https://github.com/chem-gp/examples/tree/main/fande-examples))!
 
 
