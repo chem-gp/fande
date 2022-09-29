@@ -60,22 +60,23 @@ class FandeDataModuleASE(LightningDataModule):
             np.max(self.energies_train) - np.min(self.energies_train)
         )
 
-        forces_train_norm = forces_train_norm.reshape(forces_train_norm.shape[0], -1).astype(np.float64)
-        forces_test_norm = forces_test_norm.reshape(forces_test_norm.shape[0], -1).astype(np.float64)
+        forces_train_norm = forces_train_norm.reshape(
+            forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
+            ).astype(np.float64)
+
+        forces_test_norm = forces_test_norm.reshape(
+            forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
+            ).astype(np.float64)
 
         self.train_E = torch.tensor( energies_train_norm )
         self.test_E = torch.tensor( energies_test_norm )
         self.train_F = torch.tensor( forces_train_norm )
         self.test_F = torch.tensor( forces_test_norm )
 
-        print(self.train_F[1000:1010,0])
 
         self.train_F = self.train_F[:, :].transpose(0, 1).flatten(0, 1)
+        self.test_F = self.test_F[:, :].transpose(0, 1).flatten(0, 1)
 
-        print(forces_train_norm[1000:1010])
-
-
-# finish flattening and compute invariants...
 
         self.save_hyperparameters()
 
@@ -116,87 +117,79 @@ class FandeDataModuleASE(LightningDataModule):
         # transforms = ...
         return DataLoader(self.test, batch_size=100_000)
 
-    def calculate_invariants(self):
 
-        fl = FastLoader(self.hparams)
-        derivatives_descriptors, forces_energies, forces_np, energies_np, mol, mol_traj = fl.load_and_caculate()
+    def calculate_invariants(self, soap_params):
 
-        self.forces = forces_np
-        self.energies = energies_np
 
-        forces = forces_np / (np.max(energies_np) - np.min(energies_np))
-        energies = (energies_np - np.min(energies_np)) / (
-            np.max(energies_np) - np.min(energies_np)
+        soap = SOAP(
+            species=["H", "C"],
+            periodic=False,
+            rcut=5.0,
+            sigma=0.5,
+            nmax=5,
+            lmax=5,
+            average="outer",
+            crossover=True,
+            dtype="float64",
+            sparse=False  
         )
+        pos = [0,2,3]
 
-        self.forces_norm = forces
-        self.energies_norm = energies
+        traj_train = self.traj_train
+        traj_test = self.traj_test
 
-        self.normalizing_const = np.max(energies_np) - np.min(energies_np)
-        self.normalizing_shift = np.min(energies_np)
 
-        self.mol_traj = mol_traj
-        self.forces_energies = forces_energies
+        print(f"Total length of train traj is {len(traj_train)}")
+        print("Starting SOAP calculation...")
+        derivatives_train, descriptors_train = soap.derivatives(
+            traj_train,
+            positions=[pos] * len(traj_train),
+            n_jobs=10,
+            # method="analytical"
+        )
+        print("SOAP calculation done!")
+        derivatives_train = derivatives_train.squeeze()
+        descriptors_train = descriptors_train.squeeze()
 
-        derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
-        forces_energies_torch = torch.tensor(forces_energies)
+        print(f"Total length of test traj is {len(traj_test)}")
+        print("Starting SOAP calculation...")
+        derivatives_test, descriptors_test = soap.derivatives(
+            traj_test,
+            positions=[pos] * len(traj_test),
+            n_jobs=10,
+            # method="analytical"
+        )
+        print("SOAP calculation done!")
+        derivatives_test = derivatives_test.squeeze()
+        descriptors_test = descriptors_test.squeeze()
 
-        # derivatives_descriptors_torch = dataset_torch['derivatives_descriptors_torch']
-        # forces_energies_torch = dataset_torch['forces_energies_torch']
 
-        r_train = 0.8
-        r_test = 1.0 - r_train
-        self.r_test = r_test
-        n_samples = forces_energies_torch.shape[0]
 
-        self.n_train_structures = int(r_train * n_samples)
-        self.n_test_structures = int(r_test * n_samples)
+        self.train_X = torch.tensor(descriptors_train)      
+        self.train_DX = torch.tensor(
+                derivatives_train.reshape(
+            derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
+        ))
 
-        train_X = derivatives_descriptors_torch[0 : int(r_train * n_samples), :, :]
-        train_Y = forces_energies_torch[0 : int(r_train * n_samples), :]
+        self.test_X = torch.tensor(descriptors_test)      
+        self.test_DX = torch.tensor(
+                derivatives_test.reshape(
+            derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
+        ))
 
-        trrrrx = train_X
-        trrrry = train_Y
+        print(derivatives_train.shape)
+        print(descriptors_train.shape)
 
-        test_X = derivatives_descriptors_torch[
-            int(r_train * n_samples) : n_samples, :, :
-        ]
-        test_Y = forces_energies_torch[int(r_train * n_samples) : n_samples, :]
+        # derivatives_flattened = derivatives.reshape(
+        #     derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
+        # )
 
-        test_energies_torch = test_Y[:, -1]
-        test_forces_torch = test_Y[:, :-1].reshape(-1, 3, len(mol))
 
-        self.test_shape = test_Y.shape
-        self.train_shape = train_Y.shape
+        # train_X = train_X.to(torch.float32)
+        # train_Y = train_Y.to(torch.float32)
+        # test_X = test_X.to(torch.float32)
+        # test_Y = test_Y.to(torch.float32)
 
-        train_X = train_X[:, :, :].transpose(0, 1).flatten(0, 1)
-        train_Y = train_Y[:, :].transpose(0, 1).flatten(0, 1)
-
-        test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
-        test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
-
-        # train_X = train_X[0:1000]
-        # train_Y = train_Y[0:1000]
-
-        print("Train set:")
-        print(train_X.shape, train_Y.shape)
-        print(train_X.dtype, train_Y.dtype)
-        print(train_X.device, train_Y.device)
-
-        print("\nTest set:")
-        print(test_X.shape, test_Y.shape)
-        print(test_X.dtype, test_Y.dtype)
-        print(test_X.device, test_Y.device)
-
-        train_X = train_X.to(torch.float32)
-        train_Y = train_Y.to(torch.float32)
-        test_X = test_X.to(torch.float32)
-        test_Y = test_Y.to(torch.float32)
-
-        self.train_X = train_X
-        self.train_Y = train_Y
-        self.test_X = test_X
-        self.test_Y = test_Y
 
     def get_training_data(self, n_atoms=None):
         """
@@ -324,48 +317,5 @@ class FandeDataModuleASE(LightningDataModule):
         return
 
     
-    
-    @staticmethod
-    @lru_cache(maxsize=10)
-    def calculate_invariants(traj_file, index=":", positions=None, out_file_descriptors=None, out_file_derivatives=None):
-        # saving derivatives to disk may take a lot of space
 
-        mol_traj = io.read(traj_file, index=index)
-
-        print(f"Total length of MD traj is {len(mol_traj)}")
-
-        soap = SOAP(
-            species=["H", "C", "O"],
-            periodic=False,
-            rcut=5.0,
-            sigma=0.5,
-            nmax=5,
-            lmax=5,
-            average="outer",
-            crossover=True,
-            dtype="float64",
-            sparse=False  
-        )
-
-        print("Starting SOAP calculation...")
-
-        pos = list(positions)
-        derivatives, descriptors = soap.derivatives(
-            mol_traj,
-            positions=[pos] * len(mol_traj),
-            n_jobs=10,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-
-        # np.save("data/dump/store/invariants_derivatives_outersum_300K.npy", derivatives)
-        # np.save("data/dump/store/invariants_descriptors_outersum_300K.npy", derivatives)
-
-        if out_file_derivatives is not None and out_file_descriptors is not None:
-            np.save(out_file_descriptors, descriptors)
-            np.save(out_file_derivatives, derivatives)
-        
-        # sparse.save_npz("data/dump/store/soap_.npz", derivatives)
-
-        return mol_traj, descriptors, derivatives
 
