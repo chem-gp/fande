@@ -36,6 +36,8 @@ class FandeDataModuleASE(LightningDataModule):
         self.energies_train = training_data['energies']
         self.forces_train = training_data['forces']
 
+        # self.traj_train, self.forces_train = self.randomly_rotate(self.traj_train, self.forces_train)
+
         self.traj_test = test_data['trajectory']
         self.energies_test = test_data['energies']
         self.forces_test = test_data['forces']
@@ -83,6 +85,7 @@ class FandeDataModuleASE(LightningDataModule):
         self.train_F = self.train_F[:, :].transpose(0, 1).flatten(0, 1)
         self.test_F = self.test_F[:, :].transpose(0, 1).flatten(0, 1)
 
+        self.batch_size = 1_000_000
 
         self.save_hyperparameters()
 
@@ -111,45 +114,54 @@ class FandeDataModuleASE(LightningDataModule):
 
     def train_dataloader(self):
         # transforms = ...
-        return DataLoader(self.train, batch_size=100_000)
+        return DataLoader(self.train, batch_size=self.batch_size)
 
     def val_dataloader(self):
         # ...
         # transforms = ...
-        return DataLoader(self.val, batch_size=100_000)
+        return DataLoader(self.val, batch_size=self.batch_size)
 
     def test_dataloader(self):
         # ...
         # transforms = ...
-        return DataLoader(self.test, batch_size=100_000)
+        return DataLoader(self.test, batch_size=self.batch_size)
 
 
     def calculate_invariants(self, soap_params):
 
+        species= soap_params['species']
+        periodic= soap_params['periodic']
+        rcut= soap_params['rcut']
+        sigma= soap_params['sigma']
+        nmax= soap_params['nmax']
+        lmax= soap_params['lmax']
+        average= soap_params['average']
+        crossover= soap_params['crossover']
+        dtype= soap_params['dtype']
+        sparse= soap_params['sparse']
+        positions = soap_params['positions']
 
         soap = SOAP(
-            species=["H", "C"],
-            periodic=False,
-            rcut=2.0,
-            sigma=0.5,
-            nmax=7,
-            lmax=7,
-            average="outer",
-            crossover=True,
-            dtype="float64",
-            sparse=False  
+            species=species,
+            periodic=periodic,
+            rcut=rcut,
+            sigma=sigma,
+            nmax=nmax,
+            lmax=lmax,
+            average=average,
+            crossover=crossover,
+            dtype=dtype,
+            sparse=sparse  
         )
-        pos = [0,1,2,3,4,5,6]
 
         traj_train = self.traj_train
         traj_test = self.traj_test
-
 
         print(f"Total length of train traj is {len(traj_train)}")
         print("Starting SOAP calculation...")
         derivatives_train, descriptors_train = soap.derivatives(
             traj_train,
-            positions=[pos] * len(traj_train),
+            positions=[positions] * len(traj_train),
             n_jobs=10,
             # method="analytical"
         )
@@ -161,7 +173,7 @@ class FandeDataModuleASE(LightningDataModule):
         print("Starting SOAP calculation...")
         derivatives_test, descriptors_test = soap.derivatives(
             traj_test,
-            positions=[pos] * len(traj_test),
+            positions=[positions] * len(traj_test),
             n_jobs=10,
             # method="analytical"
         )
@@ -324,29 +336,31 @@ class FandeDataModuleASE(LightningDataModule):
 
         return
 
-    def randomly_rotate(self, traj, forces):
+    def randomly_rotate(self, traj_initial, forces):
+        print("Randomly rotating training configuration and forces...")
 
+        traj = traj_initial.copy()
 
         energies_np = np.zeros(len(traj))
         forces_np = np.zeros((len(traj), len(traj[0]), 3))
 
+        mol_forces = traj[0].copy()
+        forces_rotated = np.empty_like(forces)
+
+
         for i, mol in tqdm(enumerate(traj)):
-            # mol.calc = XTB(method="GFN2-xTB")
-            # a = ase.Atoms('HH', positions = [[-0.5 * d, 0, 0], [0.5 * d, 0, 0]])
-            # a.positions = a.positions + 0.01*np.random.rand(n_atoms,3 )
 
-            # a.positions[7] = a.positions[7] + np.array([0.0, 0.0, 1.5*np.random.rand(1)] ) + np.array([1.5,1.5,1.5])
-            
             angles = 1000*np.random.rand(3)
-
             mol.euler_rotate(phi=angles[0], theta=angles[1], psi=angles[2], center=(0, 0, 0))
-            # new_traj.append(mol)# hmm.. you can also rotate forces by creating dummy molecules and rotating them
-            # energies_np[i] = mol.get_potential_energy()
-            forces_np[i, :, :] = mol.get_forces()
-            mol.calc = None
+            
+            # hmm.. you can also rotate forces by creating dummy molecules and rotating them
+            mol_forces.positions = forces[i]
+            mol_forces.euler_rotate(phi=angles[0], theta=angles[1], psi=angles[2], center=(0, 0, 0))
+            forces_rotated[i] = mol_forces.positions
+
 
         # io.write("data/dump/rotated_traj.xyz", mol_traj, format="extxyz")
 
-        return traj, forces_np
+        return traj, forces_rotated
 
 

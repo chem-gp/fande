@@ -118,7 +118,8 @@ class PredictorASE:
         self.n_molecules = test_E.shape[0]
 
         self.n_atoms = 17
-        self.batch_size = 100_000
+
+        self.batch_size = 1000_000
 
     def predict_and_plot_energies(self):
 
@@ -246,14 +247,14 @@ class PredictorASE:
         plt.rcParams["figure.figsize"] = (30, 5)
         plt.plot(pred_energies, color="blue", label="predictions", linewidth=0.4)
         plt.plot(test_energies, color="red", label="actual values", linewidth=0.4)
-        plt.fill_between(
-            x_axis,
-            pred_energies - lower_energies,
-            pred_energies + upper_energies,
-            color="b",
-            alpha=0.1,
-            label="Confidence of prediction",
-        )
+        # plt.fill_between(
+        #     x_axis,
+        #     pred_energies - lower_energies,
+        #     pred_energies + upper_energies,
+        #     color="b",
+        #     alpha=0.1,
+        #     label="Confidence of prediction",
+        # )
         plt.title(f"Energies")
         plt.legend()
         # plt.axvspan(0, l, facecolor='purple', alpha=0.05)
