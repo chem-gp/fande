@@ -51,24 +51,20 @@ class ExactGPModelForces(ExactGP, LightningModule):
 
         self.mean_module = ZeroMean()
         # self.covar_module = RBFKernel(ard_num_dims=self.soap_dim)#LinearKernel()
-        # self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
-        self.covar_module = LinearKernel()
+        # self.mean_module = ConstantMean()
+        self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
+        # self.covar_module = LinearKernel()
 
 
-    def forward(self, X):
-
-        x=X
-
+    def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
-
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 ## Below is unnecessary code...
     def get_kernel_params(self):
 
         vars = torch.zeros(self.num_envs)
-
         print(f"Likelihood noise parameter: {self.likelihood.noise}")
 
         for i in range(self.num_envs):

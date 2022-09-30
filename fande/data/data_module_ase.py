@@ -28,7 +28,7 @@ from functools import lru_cache
 
 
 class FandeDataModuleASE(LightningDataModule):
-    def __init__(self, training_data, test_data, hparams):
+    def __init__(self, training_data, test_data, hparams, atoms_forces = None):
         super().__init__()
         self.hparams.update(hparams)
 
@@ -39,6 +39,12 @@ class FandeDataModuleASE(LightningDataModule):
         self.traj_test = test_data['trajectory']
         self.energies_test = test_data['energies']
         self.forces_test = test_data['forces']
+
+        self.atoms_forces = atoms_forces
+        if atoms_forces is not None:
+            self.forces_train = self.forces_train[:,atoms_forces,:]
+            # self.forces_test = self.forces_test[:,atoms_forces,:]
+
 
         self.train_DX = None
         self.train_F = None
@@ -124,16 +130,16 @@ class FandeDataModuleASE(LightningDataModule):
         soap = SOAP(
             species=["H", "C"],
             periodic=False,
-            rcut=5.0,
+            rcut=2.0,
             sigma=0.5,
-            nmax=5,
-            lmax=5,
+            nmax=7,
+            lmax=7,
             average="outer",
             crossover=True,
             dtype="float64",
             sparse=False  
         )
-        pos = [0,2,3]
+        pos = [0,1,2,3,4,5,6]
 
         traj_train = self.traj_train
         traj_test = self.traj_test
@@ -163,7 +169,9 @@ class FandeDataModuleASE(LightningDataModule):
         derivatives_test = derivatives_test.squeeze()
         descriptors_test = descriptors_test.squeeze()
 
-
+        if self.atoms_forces is not None:
+            derivatives_train = derivatives_train[:, self.atoms_forces,:, :]
+            # derivatives_test = derivatives_test[:, self.atoms_forces,:, :]
 
         self.train_X = torch.tensor(descriptors_train)      
         self.train_DX = torch.tensor(
@@ -316,6 +324,29 @@ class FandeDataModuleASE(LightningDataModule):
 
         return
 
-    
+    def randomly_rotate(self, traj, forces):
+
+
+        energies_np = np.zeros(len(traj))
+        forces_np = np.zeros((len(traj), len(traj[0]), 3))
+
+        for i, mol in tqdm(enumerate(traj)):
+            # mol.calc = XTB(method="GFN2-xTB")
+            # a = ase.Atoms('HH', positions = [[-0.5 * d, 0, 0], [0.5 * d, 0, 0]])
+            # a.positions = a.positions + 0.01*np.random.rand(n_atoms,3 )
+
+            # a.positions[7] = a.positions[7] + np.array([0.0, 0.0, 1.5*np.random.rand(1)] ) + np.array([1.5,1.5,1.5])
+            
+            angles = 1000*np.random.rand(3)
+
+            mol.euler_rotate(phi=angles[0], theta=angles[1], psi=angles[2], center=(0, 0, 0))
+            # new_traj.append(mol)# hmm.. you can also rotate forces by creating dummy molecules and rotating them
+            # energies_np[i] = mol.get_potential_energy()
+            forces_np[i, :, :] = mol.get_forces()
+            mol.calc = None
+
+        # io.write("data/dump/rotated_traj.xyz", mol_traj, format="extxyz")
+
+        return traj, forces_np
 
 
