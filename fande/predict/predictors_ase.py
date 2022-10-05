@@ -311,7 +311,7 @@ class PredictorASE:
             plt.text(3 * l / 2, FMAX / 2, r"$F_y$", fontsize=44, alpha=0.1)
             plt.text(5 * l / 2, FMAX / 2, r"$F_z$", fontsize=44, alpha=0.1)
             # wandb.log({f"atom {fatom} : {mol[fatom].symbol}": wandb.Image(plt) })
-            plt.xticks(full_x, x_axis)
+            # plt.xticks(full_x, x_axis) # check(there's some error)
 
             plt.show()
             
