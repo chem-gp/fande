@@ -199,26 +199,45 @@ class PredictorASE:
         plt.show()
 
 
-        # print(self.r_test)
-        # mol = self.mol_traj[0]
+        # predicted_forces = (
+        #     predictions.reshape(self.n_atoms, -1)
+        #     .transpose(1, 0)
+        # )
+
+        # upper_forces = (
+        #     upper.reshape(self.n_atoms, -1)
+        #     .transpose(1, 0)
+        # )
+
+        # lower_forces = (
+        #     upper.reshape(self.n_atoms, -1)
+        #     .transpose(1, 0)
+        # )
+
+        # actual_forces = (
+        #     self.test_F.reshape(self.n_atoms, -1)
+        #     .transpose(1, 0)
+        # )
+
+
         predicted_forces = (
-            predictions.reshape(self.n_atoms, -1)
-            .transpose(1, 0)
+            predictions.reshape(3, self.n_atoms, -1)
+            .transpose(2, 1, 0)
         )
 
         upper_forces = (
-            upper.reshape(self.n_atoms, -1)
-            .transpose(1, 0)
+            upper.reshape(3, self.n_atoms, -1)
+            .transpose(2, 1, 0)
         )
 
         lower_forces = (
-            upper.reshape(self.n_atoms, -1)
-            .transpose(1, 0)
+            upper.reshape(3, self.n_atoms, -1)
+            .transpose(2, 1, 0)
         )
 
         actual_forces = (
-            self.test_F.reshape(self.n_atoms, -1)
-            .transpose(1, 0)
+            self.test_F.reshape(3, self.n_atoms, -1)
+            .transpose(2, 1, 0)
         )
 
         predicted_energies = predictions[-self.n_molecules :]

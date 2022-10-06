@@ -68,11 +68,11 @@ class FandeDataModuleASE(LightningDataModule):
             np.max(self.energies_train) - np.min(self.energies_train)
         )
 
-        forces_train_norm = forces_train_norm.reshape(
+        forces_train_norm = forces_train_norm.transpose(2,1,0).reshape(
             forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
             ).astype(np.float64)
 
-        forces_test_norm = forces_test_norm.reshape(
+        forces_test_norm = forces_test_norm.transpose(2,1,0).reshape(
             forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
             ).astype(np.float64)
 
@@ -82,8 +82,8 @@ class FandeDataModuleASE(LightningDataModule):
         self.test_F = torch.tensor( forces_test_norm )
 
 
-        self.train_F = self.train_F[:, :].transpose(0, 1).flatten(0, 1)
-        self.test_F = self.test_F[:, :].transpose(0, 1).flatten(0, 1)
+        self.train_F = self.train_F[:, :].squeeze()
+        self.test_F = self.test_F[:, :].squeeze()
 
         self.batch_size = 1_000_000
 
@@ -187,23 +187,18 @@ class FandeDataModuleASE(LightningDataModule):
 
         self.train_X = torch.tensor(descriptors_train)      
         self.train_DX = torch.tensor(
-                derivatives_train.reshape(
+                derivatives_train.transpose(2,1,0,3).reshape(
             derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
         ))
 
         self.test_X = torch.tensor(descriptors_test)      
         self.test_DX = torch.tensor(
-                derivatives_test.reshape(
+                derivatives_test.transpose(2,1,0,3).reshape(
             derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
         ))
 
         print(derivatives_train.shape)
         print(descriptors_train.shape)
-
-        # derivatives_flattened = derivatives.reshape(
-        #     derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
-        # )
-
 
         # train_X = train_X.to(torch.float32)
         # train_Y = train_Y.to(torch.float32)
