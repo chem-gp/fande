@@ -197,48 +197,27 @@ class PredictorASE:
         # plt.ylim(0, 1.0)
         # wandb.log({"all prediction": wandb.Image(plt)})
         plt.show()
-
-
-        # predicted_forces = (
-        #     predictions.reshape(self.n_atoms, -1)
-        #     .transpose(1, 0)
-        # )
-
-        # upper_forces = (
-        #     upper.reshape(self.n_atoms, -1)
-        #     .transpose(1, 0)
-        # )
-
-        # lower_forces = (
-        #     upper.reshape(self.n_atoms, -1)
-        #     .transpose(1, 0)
-        # )
-
-        # actual_forces = (
-        #     self.test_F.reshape(self.n_atoms, -1)
-        #     .transpose(1, 0)
-        # )
-
-
-        predicted_forces = (
-            predictions.reshape(3, self.n_atoms, -1)
-            .transpose(2, 1, 0)
+        f_mae = torchmetrics.functional.mean_absolute_error(
+            torch.tensor(predictions), torch.tensor(actual_values)
         )
-
-        upper_forces = (
-            upper.reshape(3, self.n_atoms, -1)
-            .transpose(2, 1, 0)
+        f_mse = torchmetrics.functional.mean_squared_error(
+            torch.tensor(predictions), torch.tensor(actual_values)
         )
+        print("Forces MAE: %5.4f" % f_mae.item())
+        print("Forces MSE: %5.4f" % f_mse.item())
+        # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
 
-        lower_forces = (
-            upper.reshape(3, self.n_atoms, -1)
-            .transpose(2, 1, 0)
-        )
 
-        actual_forces = (
-            self.test_F.reshape(3, self.n_atoms, -1)
-            .transpose(2, 1, 0)
-        )
+        predicted_forces = predictions.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)       
+        upper_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
+        lower_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)      
+        actual_forces = self.test_F.numpy()
+        actual_forces = actual_forces.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
+
+        predicted_forces = np.concatenate( (predicted_forces[:,:,0], predicted_forces[:,:,1], predicted_forces[:,:,2]) )
+        upper_forces = np.concatenate( (upper_forces[:,:,0], upper_forces[:,:,1], upper_forces[:,:,2]) )
+        lower_forces = np.concatenate( (lower_forces[:,:,0], lower_forces[:,:,1], lower_forces[:,:,2]) )
+        actual_forces = np.concatenate( (actual_forces[:,:,0], actual_forces[:,:,1], actual_forces[:,:,2]) )
 
         predicted_energies = predictions[-self.n_molecules :]
         upper_energies = upper[-self.n_molecules :]
@@ -248,7 +227,7 @@ class PredictorASE:
 
         # l = self.test_shape[0]
         pred_forces = predicted_forces
-        test_forces = actual_forces.cpu().detach().numpy()
+        test_forces = actual_forces
 
         pred_energies = predicted_energies
         test_energies = actual_energies.cpu().detach().numpy()
