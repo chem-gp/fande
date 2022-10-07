@@ -7,6 +7,8 @@ from fande.compute.compute_soap import InvariantsComputer
 
 from fande.utils import get_vectors_e, get_vectors_f
 
+from dscribe.descriptors import SOAP
+
 import torch
 import torchmetrics
 
@@ -53,6 +55,7 @@ class SimplePredictorASE:
 
         return energy, variance
 
+
     def predict_single_forces(self, snapshot, positions):
 
         if self.soap_full is not None:
@@ -79,6 +82,33 @@ class SimplePredictorASE:
 
         return f_, f_var_
 
+
+    # def predict_single_forces(self, snapshot, positions):
+
+    #     if self.soap_full is not None:
+    #         x = self.soap_full
+    #     else:
+    #         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
+    #         self.soap_full = x
+
+
+    #     x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
+    #     x = x[:,:-1, :].squeeze()
+
+    #     y_dummy = torch.zeros(3*self.n_atoms)
+
+    #     test = TensorDataset(x, y_dummy)
+    #     test_dl = DataLoader(test, batch_size=self.batch_size)
+    #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
+
+    #     predictions_torch = res.mean
+    #     variances_torch = res.variance
+
+    #     f_ = predictions_torch.cpu().detach().numpy()
+    #     f_var_ = variances_torch.cpu().detach().numpy()
+
+    #     return f_, f_var_
+
     def unnormalize_energy(self):
         ...
 
@@ -98,10 +128,13 @@ class PredictorASE:
         test_E,
         test_F,
         test_data,
-        hparams
+        hparams,
+        soap_params
     ):
 
         self.hparams = hparams
+        self.soap_params = soap_params
+
         self.model_e = model_e
         self.model_f = model_f
 
@@ -324,3 +357,91 @@ class PredictorASE:
             print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
 
         return
+
+
+    def predict_forces_single(self, snapshot):
+
+        x, dx = self.soap_single(snapshot)
+
+        # print("descriptors OKAY!")
+
+        # dx = dx.view(3*self.n_atoms,-1).transpose(0,1)
+        # dx = dx[:,:-1, :].squeeze()
+
+        y_dummy = torch.zeros(3*self.n_atoms)
+
+        test = TensorDataset(dx, y_dummy)
+        test_dl = DataLoader(test, batch_size=self.batch_size)
+        res = self.trainer_f.predict(self.model_f, test_dl)[0]
+
+        predictions_torch = res.mean
+        variances_torch = res.variance
+
+        f_ = predictions_torch.cpu().detach().numpy()
+        f_var_ = variances_torch.cpu().detach().numpy()
+
+        f_ = f_.reshape(3, self.n_atoms).transpose(1, 0)
+        f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)           
+
+        return f_, f_var_
+
+
+
+    def soap_single(self, snapshot):
+
+        soap_params = self.soap_params
+
+        species= soap_params['species']
+        periodic= soap_params['periodic']
+        rcut= soap_params['rcut']
+        sigma= soap_params['sigma']
+        nmax= soap_params['nmax']
+        lmax= soap_params['lmax']
+        average= soap_params['average']
+        crossover= soap_params['crossover']
+        dtype= soap_params['dtype']
+        sparse= soap_params['sparse']
+        positions = soap_params['positions']
+
+        soap = SOAP(
+            species=species,
+            periodic=periodic,
+            rcut=rcut,
+            sigma=sigma,
+            nmax=nmax,
+            lmax=lmax,
+            average=average,
+            crossover=crossover,
+            dtype=dtype,
+            sparse=sparse  
+        )
+
+        snap = [snapshot]
+
+        print("Starting SOAP calculation...")
+        derivatives, descriptors = soap.derivatives(
+            snap,
+            positions=[positions] * len(snap),
+            n_jobs=1,
+            # method="analytical"
+        )
+        print("SOAP calculation done!")
+        derivatives = derivatives.squeeze()
+        descriptors = descriptors.squeeze()
+
+        # print(derivatives.shape)
+
+        x = torch.tensor(descriptors)    
+
+        dx = torch.tensor(
+                derivatives.transpose(1,0,2).reshape(
+            derivatives.shape[0]*derivatives.shape[1], -1
+        ))
+
+        # print(dx.shape)
+
+        if self.hparams['device'] == 'gpu':
+            x = x.cuda()
+            dx = dx.cuda()
+
+        return x, dx

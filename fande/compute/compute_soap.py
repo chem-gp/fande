@@ -60,3 +60,6 @@ class InvariantsComputer:
         derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
 
         return derivatives_descriptors_torch
+
+
+
