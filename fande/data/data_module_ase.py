@@ -58,15 +58,16 @@ class FandeDataModuleASE(LightningDataModule):
         self.test_X = None
         self.test_E = None
 
-        forces_train_norm = self.forces_train / (np.max(self.energies_train) - np.min(self.energies_train))
-        energies_train_norm = (self.energies_train - np.min(self.energies_train)) / (
-            np.max(self.energies_train) - np.min(self.energies_train)
-        )
+        self.normalizing_factor = np.max(self.energies_train) - np.min(self.energies_train)
 
-        forces_test_norm = self.forces_test / (np.max(self.energies_train) - np.min(self.energies_train))
-        energies_test_norm = (self.energies_test - np.min(self.energies_train)) / (
-            np.max(self.energies_train) - np.min(self.energies_train)
-        )
+        forces_train_norm = self.forces_train / self.normalizing_factor
+        energies_train_norm = (self.energies_train - np.min(self.energies_train)) / self.normalizing_factor
+
+        forces_test_norm = self.forces_test / self.normalizing_factor
+        energies_test_norm = (self.energies_test - np.min(self.energies_train)) / self.normalizing_factor
+
+        self.forces_train_norm = forces_train_norm
+        self.forces_test_norm = forces_test_norm
 
         forces_train_norm = forces_train_norm.transpose(2,1,0).reshape(
             forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
@@ -75,6 +76,7 @@ class FandeDataModuleASE(LightningDataModule):
         forces_test_norm = forces_test_norm.transpose(2,1,0).reshape(
             forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
             ).astype(np.float64)
+
 
         self.train_E = torch.tensor( energies_train_norm )
         self.test_E = torch.tensor( energies_test_norm )
@@ -87,7 +89,7 @@ class FandeDataModuleASE(LightningDataModule):
 
         self.batch_size = 1_000_000
 
-        self.save_hyperparameters()
+        # self.save_hyperparameters()
 
 
         # print(self.forces_train[0,1,:])

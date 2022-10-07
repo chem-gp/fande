@@ -381,7 +381,10 @@ class PredictorASE:
         f_var_ = variances_torch.cpu().detach().numpy()
 
         f_ = f_.reshape(3, self.n_atoms).transpose(1, 0)
-        f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)           
+        f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)     
+
+        # f_ = f_.reshape(self.n_atoms, 3)
+        # f_var_ = f_var_.reshape(self.n_atoms, 3)      
 
         return f_, f_var_
 
