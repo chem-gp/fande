@@ -12,6 +12,10 @@ from dscribe.descriptors import SOAP
 import torch
 import torchmetrics
 
+from ase.units import Bohr, Hartree
+
+from xtb.ase.calculator import XTB
+
 
 class SimplePredictorASE:
     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
@@ -119,6 +123,7 @@ class SimplePredictorASE:
 class PredictorASE:
     def __init__(
         self,
+        fdm,
         model_e,
         model_f,
         trainer_e,
@@ -132,6 +137,7 @@ class PredictorASE:
         soap_params
     ):
 
+        self.fdm = fdm
         self.hparams = hparams
         self.soap_params = soap_params
 
@@ -153,6 +159,8 @@ class PredictorASE:
         self.n_atoms = 17
 
         self.batch_size = 1000_000
+
+        self.xtb_calc = XTB(method="GFN2-xTB")
 
     def predict_and_plot_energies(self):
 
@@ -359,6 +367,14 @@ class PredictorASE:
         return
 
 
+    def predict_energy_single(self,snapshot):
+        # Check with XTB values:
+        e_ = self.get_xtb_energy(snapshot)
+        e_var_ = np.zeros_like(e_)
+
+        return e_, e_var_  
+
+
     def predict_forces_single(self, snapshot):
 
         x, dx = self.soap_single(snapshot)
@@ -384,7 +400,16 @@ class PredictorASE:
         f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)     
 
         # f_ = f_.reshape(self.n_atoms, 3)
-        # f_var_ = f_var_.reshape(self.n_atoms, 3)      
+        # f_var_ = f_var_.reshape(self.n_atoms, 3)
+        #
+        # print("Normalizing factor", self.fdm.normalizing_factor)
+
+        f_ = f_ * self.fdm.normalizing_factor * Hartree / Bohr
+        f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
+
+        # Check with XTB values:
+        # f_ = self.get_xtb_forces(snapshot)
+        # f_var_ = np.zeros_like(f_)    
 
         return f_, f_var_
 
@@ -443,8 +468,33 @@ class PredictorASE:
 
         # print(dx.shape)
 
+
         if self.hparams['device'] == 'gpu':
             x = x.cuda()
             dx = dx.cuda()
 
         return x, dx
+
+
+    def get_xtb_energy(self, atoms):
+
+        atoms_ = atoms.copy()
+        atoms_.calc = self.xtb_calc
+
+        res_ = atoms_.get_potential_energy()
+
+        del atoms_
+
+        return res_
+
+
+    def get_xtb_forces(self, atoms):
+
+        atoms_ = atoms.copy()
+        atoms_.calc = self.xtb_calc
+
+        res_ = atoms_.get_forces()
+
+        del atoms_
+
+        return res_
