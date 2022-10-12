@@ -408,8 +408,8 @@ class PredictorASE:
         f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
 
         # Check with XTB values:
-        # f_ = self.get_xtb_forces(snapshot)
-        # f_var_ = np.zeros_like(f_)    
+        f_ = self.get_xtb_forces(snapshot)
+        f_var_ = np.zeros_like(f_)    
 
         return f_, f_var_
 
