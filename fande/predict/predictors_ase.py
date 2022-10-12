@@ -369,8 +369,11 @@ class PredictorASE:
 
     def predict_energy_single(self,snapshot):
         # Check with XTB values:
-        e_ = self.get_xtb_energy(snapshot)
-        e_var_ = np.zeros_like(e_)
+        # e_ = self.get_xtb_energy(snapshot)
+        # e_var_ = np.zeros_like(e_)
+
+        e_ = 0.0
+        e_var_ = 0.0
 
         return e_, e_var_  
 
@@ -378,8 +381,6 @@ class PredictorASE:
     def predict_forces_single(self, snapshot):
 
         x, dx = self.soap_single(snapshot)
-
-        # print("descriptors OKAY!")
 
         # dx = dx.view(3*self.n_atoms,-1).transpose(0,1)
         # dx = dx[:,:-1, :].squeeze()
@@ -404,12 +405,17 @@ class PredictorASE:
         #
         # print("Normalizing factor", self.fdm.normalizing_factor)
 
-        f_ = f_ * self.fdm.normalizing_factor * Hartree / Bohr
-        f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
+        # moved to the PredictorASE:
+        # f_ = f_ * self.fdm.normalizing_factor * Hartree / Bohr
+        # f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
+
+        f_ = f_ * self.fdm.normalizing_factor
+        f_var_ = f_var_ * self.fdm.normalizing_factor
 
         # Check with XTB values:
-        f_ = self.get_xtb_forces(snapshot)
-        f_var_ = np.zeros_like(f_)    
+        # f_ = self.get_xtb_forces(snapshot)
+        # f_var_ = np.zeros_like(f_)
+
 
         return f_, f_var_
 
