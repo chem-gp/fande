@@ -22,13 +22,15 @@ from ase import io
 
 from tqdm import tqdm
 
+from ase.units import Bohr, Hartree
+
 
 from functools import lru_cache
 
 
 
 class FandeDataModuleASE(LightningDataModule):
-    def __init__(self, training_data, test_data, hparams, atoms_forces = None):
+    def __init__(self, training_data, test_data, hparams, units='ev_angstrom'):
         super().__init__()
         self.hparams.update(hparams)
 
@@ -42,10 +44,13 @@ class FandeDataModuleASE(LightningDataModule):
         self.energies_test = test_data['energies']
         self.forces_test = test_data['forces']
 
-        self.atoms_forces = atoms_forces
-        if atoms_forces is not None:
-            self.forces_train = self.forces_train[:,atoms_forces,:]
-            # self.forces_test = self.forces_test[:,atoms_forces,:]
+        if units=='hartree_bohr':
+            self.energies_train = self.energies_train * Hartree
+            self.energies_test = self.energies_test * Hartree
+            self.forces_train = self.forces_train * Hartree / Bohr
+            self.forces_test = self.forces_test * Hartree / Bohr
+
+
 
 
         self.train_DX = None
@@ -183,9 +188,6 @@ class FandeDataModuleASE(LightningDataModule):
         derivatives_test = derivatives_test.squeeze()
         descriptors_test = descriptors_test.squeeze()
 
-        if self.atoms_forces is not None:
-            derivatives_train = derivatives_train[:, self.atoms_forces,:, :]
-            # derivatives_test = derivatives_test[:, self.atoms_forces,:, :]
 
         self.train_X = torch.tensor(descriptors_train)      
         self.train_DX = torch.tensor(
