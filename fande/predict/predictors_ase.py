@@ -128,11 +128,6 @@ class PredictorASE:
         model_f,
         trainer_e,
         trainer_f,
-        test_X,
-        test_DX,
-        test_E,
-        test_F,
-        test_data,
         hparams,
         soap_params
     ):
@@ -147,14 +142,16 @@ class PredictorASE:
         self.trainer_e = trainer_e
         self.trainer_f = trainer_f
 
-        self.test_X = test_X
-        self.test_DX = test_DX
-        self.test_E = test_E
-        self.test_F = test_F
 
-        self.test_traj = test_data['trajectory']
 
-        self.n_molecules = test_E.shape[0]
+        self.test_X = fdm.test_X
+        self.test_DX = fdm.test_DX
+        self.test_E = fdm.test_E
+        self.test_F = fdm.test_F
+
+        self.test_traj = fdm.traj_test
+
+        self.n_molecules = fdm.test_E.shape[0]
 
         self.n_atoms = 17
 
