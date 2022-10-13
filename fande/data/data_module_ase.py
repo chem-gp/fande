@@ -45,6 +45,7 @@ class FandeDataModuleASE(LightningDataModule):
         self.forces_test = test_data['forces']
 
         if units=='hartree_bohr':
+            print('Converting from Hartree to eV, Hartree/Bohr to eV/Angstrom')
             self.energies_train = self.energies_train * Hartree
             self.energies_test = self.energies_test * Hartree
             self.forces_train = self.forces_train * Hartree / Bohr
