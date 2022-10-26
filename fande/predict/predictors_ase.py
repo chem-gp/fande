@@ -217,9 +217,10 @@ class PredictorASE:
         # variances_torch = res.variance
         # print(variances_torch, res.confidence_region())
 
-        lower, upper = res.confidence_region()
-        lower = 0.1 * lower.cpu().detach().numpy()
-        upper = 0.1 * upper.cpu().detach().numpy()
+        # lower, upper = res.confidence_region()
+        # lower = 0.1 * lower.cpu().detach().numpy()
+        # upper = 0.1 * upper.cpu().detach().numpy()
+
         # lower = lower.tolist()
         # upper = upper.tolist()
         # print(lower, upper)
@@ -247,19 +248,19 @@ class PredictorASE:
 
 
         predicted_forces = predictions.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)       
-        upper_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
-        lower_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)      
+        # upper_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
+        # lower_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)      
         actual_forces = self.test_F.numpy()
         actual_forces = actual_forces.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
 
         predicted_forces = np.concatenate( (predicted_forces[:,:,0], predicted_forces[:,:,1], predicted_forces[:,:,2]) )
-        upper_forces = np.concatenate( (upper_forces[:,:,0], upper_forces[:,:,1], upper_forces[:,:,2]) )
-        lower_forces = np.concatenate( (lower_forces[:,:,0], lower_forces[:,:,1], lower_forces[:,:,2]) )
+        # upper_forces = np.concatenate( (upper_forces[:,:,0], upper_forces[:,:,1], upper_forces[:,:,2]) )
+        # lower_forces = np.concatenate( (lower_forces[:,:,0], lower_forces[:,:,1], lower_forces[:,:,2]) )
         actual_forces = np.concatenate( (actual_forces[:,:,0], actual_forces[:,:,1], actual_forces[:,:,2]) )
 
         predicted_energies = predictions[-self.n_molecules :]
-        upper_energies = upper[-self.n_molecules :]
-        lower_energies = lower[-self.n_molecules :]
+        # upper_energies = upper[-self.n_molecules :]
+        # lower_energies = lower[-self.n_molecules :]
 
         actual_energies = self.test_E
 
@@ -310,8 +311,9 @@ class PredictorASE:
         )
 
         full_x = np.arange(0, 3 * self.n_molecules, 100).tolist()
-        lower_forces = pred_forces - lower_forces
-        upper_forces = pred_forces + upper_forces
+        # lower_forces = pred_forces - lower_forces
+        # upper_forces = pred_forces + upper_forces
+
         x_axis_forces = np.arange(3 * self.n_molecules).tolist()
 
         mol = self.test_traj[0]
@@ -328,14 +330,14 @@ class PredictorASE:
 
             # print(lower_forces[:,fatom],upper_forces[:,fatom])
 
-            plt.fill_between(
-                x_axis_forces,
-                lower_forces[:,fatom],
-                upper_forces[:,fatom],
-                color="b",
-                alpha=0.1,
-                label="Confidence of prediction"
-            )
+            # plt.fill_between(
+            #     x_axis_forces,
+            #     lower_forces[:,fatom],
+            #     upper_forces[:,fatom],
+            #     color="b",
+            #     alpha=0.1,
+            #     label="Confidence of prediction"
+            # )
 
             plt.title(f"Forces, atom {fatom} : {mol[fatom].symbol}")
             plt.legend()
@@ -359,7 +361,7 @@ class PredictorASE:
             )
             print("Forces MAE: %5.4f" % self.f_mae.item())
             print("Forces MSE: %5.4f" % self.f_mse.item())
-            print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
+            # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
 
         return
 
@@ -389,13 +391,13 @@ class PredictorASE:
         res = self.trainer_f.predict(self.model_f, test_dl)[0]
 
         predictions_torch = res.mean
-        variances_torch = res.variance
+        # variances_torch = res.variance
 
         f_ = predictions_torch.cpu().detach().numpy()
-        f_var_ = variances_torch.cpu().detach().numpy()
+        # f_var_ = variances_torch.cpu().detach().numpy()
 
         f_ = f_.reshape(3, self.n_atoms).transpose(1, 0)
-        f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)     
+        # f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)     
 
         # f_ = f_.reshape(self.n_atoms, 3)
         # f_var_ = f_var_.reshape(self.n_atoms, 3)
@@ -405,6 +407,8 @@ class PredictorASE:
         # moved to the PredictorASE:
         # f_ = f_ * self.fdm.normalizing_factor * Hartree / Bohr
         # f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
+
+        f_var_ = 0.0
 
         f_ = f_ * self.fdm.normalizing_factor
         f_var_ = f_var_ * self.fdm.normalizing_factor
