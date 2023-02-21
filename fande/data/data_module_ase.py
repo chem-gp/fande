@@ -281,7 +281,7 @@ class FandeDataModuleASE(LightningDataModule):
         # get the derivatives of the representation w.r.t. the atomic positions
         DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
         
-        print(grad_info_train[0:10])
+        # print(grad_info_train[0:10])
 
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
@@ -292,43 +292,59 @@ class FandeDataModuleASE(LightningDataModule):
                     indices.append(ind)
             
             DX_train_sub = DX_train[indices]        
-            F_train = np.zeros_like(DX_train_sub[:,:,0])
+            F_train_sub = np.zeros_like(DX_train_sub[:,:,0])
+            
+            print("Subsampling training forces...")
+            k=-1
             for ind,c in enumerate(grad_info_train):
                 if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-                    F_train[ind] = self.forces_train[c[0], c[2]%n_atoms, :]
+                    k=k+1
+                    # print(self.forces_train[c[0], c[2]%n_atoms, :].shape)
+                    # print(F_train[k].shape)
+                    F_train_sub[k] = self.forces_train[c[0], c[2]%n_atoms, :]
 
             # print("Sampling of training forces:")
             # self.train_X = torch.tensor(soap_array_train)      
             # self.train_DX = torch.tensor(soap_grad_array_train)
 
 
-        # soap_test = SphericalInvariants(**hypers)
-        # managers_test = soap_test.transform(traj_test)
-        # soap_array_test = managers_test.get_features(soap_test)
-        # soap_grad_array_test = managers_test.get_features_gradient(soap_test)      
-        # # representation = managers
-        # # get the information necessary to the computation of gradients. 
-        # # It has as many rows as dX_dr and each columns correspond to the 
-        # # index of the structure, the central atom, the neighbor atom and their atomic species.
-        # # ij = representation.get_gradients_info()
-        # # get the derivatives of the representation w.r.t. the atomic positions
-        # # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
+        soap_test = SphericalInvariants(**hypers)
+        managers_test = soap_test.transform(traj_test)
+        soap_array_test = managers_test.get_features(soap_test)
+        soap_grad_array_test = managers_test.get_features_gradient(soap_test)      
         
-        # grad_info_test = managers_test.get_gradients_info()
-        # #for now just subsampling the grad_array
-        # if centers_positions is not None and derivatives_positions is not None:
-        #     print("Subsampling the gradients for selected positions...")
-        #     indices = []
-        #     for ind,c in enumerate(grad_info_test):
-        #         if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-        #             indices.append(ind)
-        #     soap_grad_array_test = soap_grad_array_test[indices]
-        # self.test_X = torch.tensor(soap_array_test)      
-        # self.test_DX = torch.tensor(soap_grad_array_test)
+        grad_info_test = managers_test.get_gradients_info()
+        DX_test = soap_grad_array_train.reshape((grad_info_test.shape[0], 3, -1))
+        #for now just subsampling the grad_array
+        if centers_positions is not None and derivatives_positions is not None:
+            print("Subsampling the gradients for selected positions...")
+            indices = []
+            for ind,c in enumerate(grad_info_test):
+                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
+                    indices.append(ind)
+
+            DX_test_sub = DX_test[indices]        
+            F_test_sub = np.zeros_like(DX_test_sub[:,:,0])
+            
+            print("Subsampling test forces...")
+            k=-1
+            for ind,c in enumerate(grad_info_train):
+                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
+                    k=k+1
+                    # print(self.forces_train[c[0], c[2]%n_atoms, :].shape)
+                    # print(F_train[k].shape)
+                    F_test_sub[k] = self.forces_test[c[0], c[2]%n_atoms, :]
+
+
+        train_DX = DX_train_sub.reshape(-1, DX_train_sub.shape[-1])
+        train_F = F_train_sub.reshape(-1)
+
+        self.test_X = torch.tensor(soap_array_test)      
+        self.test_DX = torch.tensor(soap_grad_array_test)
 
 
 
-        return DX_train, F_train, grad_info_train
+        return train_DX, train_F
 
 
 
