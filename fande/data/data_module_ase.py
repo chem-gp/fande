@@ -263,61 +263,72 @@ class FandeDataModuleASE(LightningDataModule):
         for f in traj_test:
             f.wrap(eps=1e-18)
 
+        n_atoms = len(traj_train[0])
+
         print(f"Total length of train traj is {len(traj_train)}")
-        print(f"Total length of train traj is {len(traj_test)}")
+        print(f"Total length of test traj is {len(traj_test)}")
         print("Starting invariants calculation with librascal...")
 
-        soap = SphericalInvariants(**hypers)
+        soap_train = SphericalInvariants(**hypers)
+        managers_train = soap_train.transform(traj_train)
+        soap_array_train = managers_train.get_features(soap_train)
+        soap_grad_array_train = managers_train.get_features_gradient(soap_train)  
 
-        managers_train = soap.transform(traj_train)
-        soap_array_train = managers_train.get_features(soap)
-        soap_grad_array_train = managers_train.get_features_gradient(soap)      
-        # representation = managers
+        grad_info_train = managers_train.get_gradients_info()
         # get the information necessary to the computation of gradients. 
         # It has as many rows as dX_dr and each columns correspond to the 
         # index of the structure, the central atom, the neighbor atom and their atomic species.
-        # ij = representation.get_gradients_info()
         # get the derivatives of the representation w.r.t. the atomic positions
-        # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
-        grad_info_train = managers_train.get_gradients_info()
+        DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
+        
+        print(grad_info_train[0:10])
+
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
             indices = []
             for ind,c in enumerate(grad_info_train):
-                if (c[1] in centers_positions) or (c[2] in derivatives_positions):
+                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
                     indices.append(ind)
-            soap_grad_array_train = soap_grad_array_train[indices]
-        self.train_X = torch.tensor(soap_array_train)      
-        self.train_DX = torch.tensor(soap_grad_array_train)
+            
+            DX_train_sub = DX_train[indices]        
+            F_train = np.zeros_like(DX_train_sub[:,:,0])
+            for ind,c in enumerate(grad_info_train):
+                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
+                    F_train[ind] = self.forces_train[c[0], c[2]%n_atoms, :]
+
+            # print("Sampling of training forces:")
+            # self.train_X = torch.tensor(soap_array_train)      
+            # self.train_DX = torch.tensor(soap_grad_array_train)
 
 
-        managers_test = soap.transform(traj_test)
-        soap_array_test = managers_test.get_features(soap)
-        soap_grad_array_test = managers_test.get_features_gradient(soap)      
-        # representation = managers
-        # get the information necessary to the computation of gradients. 
-        # It has as many rows as dX_dr and each columns correspond to the 
-        # index of the structure, the central atom, the neighbor atom and their atomic species.
-        # ij = representation.get_gradients_info()
-        # get the derivatives of the representation w.r.t. the atomic positions
-        # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
-        grad_info_test = managers_test.get_gradients_info()
-        #for now just subsampling the grad_array
-        if centers_positions is not None and derivatives_positions is not None:
-            print("Subsampling the gradients for selected positions...")
-            indices = []
-            for ind,c in enumerate(grad_info_test):
-                if (c[1] in centers_positions) or (c[2] in derivatives_positions):
-                    indices.append(ind)
-            soap_grad_array_test = soap_grad_array_test[indices]
-        self.test_X = torch.tensor(soap_array_test)      
-        self.test_DX = torch.tensor(soap_grad_array_test)
-
-        print("Invariant descriptor calculation done!")
+        # soap_test = SphericalInvariants(**hypers)
+        # managers_test = soap_test.transform(traj_test)
+        # soap_array_test = managers_test.get_features(soap_test)
+        # soap_grad_array_test = managers_test.get_features_gradient(soap_test)      
+        # # representation = managers
+        # # get the information necessary to the computation of gradients. 
+        # # It has as many rows as dX_dr and each columns correspond to the 
+        # # index of the structure, the central atom, the neighbor atom and their atomic species.
+        # # ij = representation.get_gradients_info()
+        # # get the derivatives of the representation w.r.t. the atomic positions
+        # # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
         
+        # grad_info_test = managers_test.get_gradients_info()
+        # #for now just subsampling the grad_array
+        # if centers_positions is not None and derivatives_positions is not None:
+        #     print("Subsampling the gradients for selected positions...")
+        #     indices = []
+        #     for ind,c in enumerate(grad_info_test):
+        #         if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
+        #             indices.append(ind)
+        #     soap_grad_array_test = soap_grad_array_test[indices]
+        # self.test_X = torch.tensor(soap_array_test)      
+        # self.test_DX = torch.tensor(soap_grad_array_test)
 
-        return
+
+
+        return DX_train, F_train, grad_info_train
 
 
 
