@@ -18,6 +18,8 @@ from fande.utils import get_vectors_e, get_vectors_f
 
 from dscribe.descriptors import SOAP
 
+from rascal.representations import SphericalInvariants
+
 from ase import io
 
 from tqdm import tqdm
@@ -135,7 +137,7 @@ class FandeDataModuleASE(LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch_size)
 
 
-    def calculate_invariants(self, soap_params):
+    def calculate_invariants_dscribe(self, soap_params):
 
         species= soap_params['species']
         periodic= soap_params['periodic']
@@ -209,6 +211,94 @@ class FandeDataModuleASE(LightningDataModule):
         # train_Y = train_Y.to(torch.float32)
         # test_X = test_X.to(torch.float32)
         # test_Y = test_Y.to(torch.float32)
+
+
+    # https://github.com/lab-cosmo/librascal/blob/4e576ae7b9d3740715ab1910def5e1a15ffd1268/tests/python/python_representation_calculator_test.py
+    # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
+    def calculate_invariants_librascal(self, soap_params, centers_positions=None, derivatives_positions=None):
+
+        species= soap_params['species']
+        periodic= soap_params['periodic']
+        rcut= soap_params['rcut']
+        sigma= soap_params['sigma']
+        nmax= soap_params['nmax']
+        lmax= soap_params['lmax']
+        average= soap_params['average']
+        crossover= soap_params['crossover']
+        dtype= soap_params['dtype']
+        sparse= soap_params['sparse']
+        positions = soap_params['positions']
+
+        hypers = dict(soap_type="PowerSpectrum",
+                    interaction_cutoff=4.0,
+                    max_radial=5,
+                    max_angular=5,
+                    gaussian_sigma_constant=0.5,
+                    gaussian_sigma_type="Constant",
+                    cutoff_function_type="RadialScaling",
+                    cutoff_smooth_width=0.5,
+                    cutoff_function_parameters=
+                            dict(
+                                    rate=1,
+                                    scale=3.5,
+                                    exponent=4
+                                ),
+                    radial_basis="GTO",
+                    normalize=True,
+                    #   optimization=
+                    #         dict(
+                    #                 Spline=dict(
+                    #                    accuracy=1.0e-05
+                    #                 )
+                    #             ),
+                    compute_gradients=True
+                    )
+        
+        traj_train = self.traj_train
+        # traj_test = self.traj_test
+
+        for f in traj_train:
+            f.wrap(eps=1e-18)
+
+        print(f"Total length of train traj is {len(traj_train)}")
+        print("Starting invariants calculation with librascal...")
+
+        soap = SphericalInvariants(**hypers)
+        managers = soap.transform(traj_train)
+        soap_array = managers.get_features(soap)
+        soap_grad_array = managers.get_features_gradient(soap)
+        
+        # representation = managers
+        # get the information necessary to the computation of gradients. 
+        # It has as many rows as dX_dr and each columns correspond to the 
+        # index of the structure, the central atom, the neighbor atom and their atomic species.
+        # ij = representation.get_gradients_info()
+        # get the derivatives of the representation w.r.t. the atomic positions
+        # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
+
+        grad_info = managers.get_gradients_info()
+
+
+        #for now just subsampling the grad_array
+        if centers_positions is not None and derivatives_positions is not None:
+            print("Subsampling the gradients for selected positions...")
+            indices = []
+            for ind,c in enumerate(grad_info):
+                if (c[1] in centers_positions) or (c[2] in derivatives_positions):
+                    indices.append(ind)
+
+            soap_grad_array = soap_grad_array[indices]
+
+
+        self.test_X = torch.tensor(soap_array)      
+        self.test_DX = torch.tensor(soap_grad_array)
+
+        print("Invariant descriptor calculation done!")
+
+        return
+
+
+
 
 
     def get_training_data(self, n_atoms=None):
