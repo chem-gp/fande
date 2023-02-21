@@ -264,6 +264,7 @@ class FandeDataModuleASE(LightningDataModule):
             f.wrap(eps=1e-18)
 
         print(f"Total length of train traj is {len(traj_train)}")
+        print(f"Total length of train traj is {len(traj_test)}")
         print("Starting invariants calculation with librascal...")
 
         soap = SphericalInvariants(**hypers)
@@ -301,7 +302,7 @@ class FandeDataModuleASE(LightningDataModule):
         # ij = representation.get_gradients_info()
         # get the derivatives of the representation w.r.t. the atomic positions
         # dX_dr = representation.get_features_gradient(soap).reshape((ij.shape[0], 3, -1))
-        grad_info_train = managers_test.get_gradients_info()
+        grad_info_test = managers_test.get_gradients_info()
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
@@ -314,6 +315,7 @@ class FandeDataModuleASE(LightningDataModule):
         self.test_DX = torch.tensor(soap_grad_array_test)
 
         print("Invariant descriptor calculation done!")
+        
 
         return
 
