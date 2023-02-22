@@ -314,7 +314,7 @@ class FandeDataModuleASE(LightningDataModule):
         soap_grad_array_test = managers_test.get_features_gradient(soap_test)      
         
         grad_info_test = managers_test.get_gradients_info()
-        DX_test = soap_grad_array_train.reshape((grad_info_test.shape[0], 3, -1))
+        DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
@@ -328,7 +328,7 @@ class FandeDataModuleASE(LightningDataModule):
             
             print("Subsampling test forces...")
             k=-1
-            for ind,c in enumerate(grad_info_train):
+            for ind,c in enumerate(grad_info_test):
                 if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
                     k=k+1
                     # print(self.forces_train[c[0], c[2]%n_atoms, :].shape)
@@ -336,15 +336,27 @@ class FandeDataModuleASE(LightningDataModule):
                     F_test_sub[k] = self.forces_test[c[0], c[2]%n_atoms, :]
 
 
-        train_DX = DX_train_sub.reshape(-1, DX_train_sub.shape[-1])
-        train_F = F_train_sub.reshape(-1)
+        train_DX = DX_train_sub
+        train_F = F_train_sub
 
-        self.test_X = torch.tensor(soap_array_test)      
-        self.test_DX = torch.tensor(soap_grad_array_test)
+        test_DX = DX_test_sub
+        test_F = F_test_sub
 
+        # self.test_X = torch.tensor(soap_array_test)      
+        # self.test_DX = torch.tensor(soap_grad_array_test)
 
+        DX_train_t = torch.tensor(train_DX)
+        F_train_t = torch.tensor(train_F)
 
-        return train_DX, train_F
+        DX_test_t = torch.tensor(test_DX)
+        F_test_t = torch.tensor(train_F)
+
+        self.train_DX = torch.flatten(DX_train_t, start_dim=0, end_dim=1)
+        self.train_F = torch.flatten(F_train_t, start_dim=0, end_dim=1)
+        self.test_DX = torch.flatten(DX_test_t, start_dim=0, end_dim=1)
+        self.test_F = torch.flatten(F_test_t, start_dim=0, end_dim=1)
+
+        return 
 
 
 
