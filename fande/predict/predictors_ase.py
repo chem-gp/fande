@@ -395,11 +395,11 @@ class PredictorASE:
             actual_values = self.test_F.cpu().detach().numpy()
             plt.rcParams["figure.figsize"] = (30, 10)
 
-            predictions_xyz = np.concatenate( (predictions[::1], predictions[::2], predictions[::3]))
-            actual_values_xyz = np.concatenate( (actual_values[::1], actual_values[::2], actual_values[::3]))
+            predictions_xyz = np.concatenate( (predictions[0::3], predictions[1::3], predictions[2::3]))
+            actual_values_xyz = np.concatenate( (actual_values[0::3], actual_values[1::3], actual_values[2::3]))
 
-            plt.plot(predictions_xyz, color="blue", label="predictions", linewidth=0.2)
-            plt.plot(actual_values_xyz, color="red", label="actual values", linewidth=0.2)
+            plt.plot(predictions_xyz, color="blue", label="predictions", linewidth=0.4)
+            plt.plot(actual_values_xyz, color="red", label="actual values", linewidth=0.4)
 
             plt.legend()
             # plt.xlim(3000,4000)

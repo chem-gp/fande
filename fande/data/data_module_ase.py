@@ -230,7 +230,7 @@ class FandeDataModuleASE(LightningDataModule):
         positions = soap_params['positions']
 
         hypers = dict(soap_type="PowerSpectrum",
-                    interaction_cutoff=3.0,
+                    interaction_cutoff=5.0,
                     max_radial=5,
                     max_angular=5,
                     gaussian_sigma_constant=0.5,
@@ -336,14 +336,22 @@ class FandeDataModuleASE(LightningDataModule):
 
 
 
+        if centers_positions is not None and derivatives_positions is not None:
             self.train_DX = torch.tensor(train_DX_np)
             self.test_DX = torch.tensor(test_DX_np)
-
             self.train_F = torch.tensor(forces_train_flat)
             self.test_F = torch.tensor(forces_test_flat)
+        # else:
+        #     self.train_DX = torch.tensor(train_soap_grad_array_train)
+        #     self.test_DX = torch.tensor(train_soap_grad_array_test)
+
+        #     forces_train_flat = 
+        #     # forces_train_flat
+        #     self.train_F = torch.tensor(forces_train_flat)
+        #     self.test_F = torch.tensor(forces_test_flat)
 
 
-        return soap_grad_array_train, soap_grad_array_test
+        return train_grad_info_sub, test_grad_info_sub
 
 
 
