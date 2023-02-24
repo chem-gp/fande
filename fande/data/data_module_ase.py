@@ -274,55 +274,76 @@ class FandeDataModuleASE(LightningDataModule):
         soap_array_train = managers_train.get_features(soap_train)
         soap_grad_array_train = managers_train.get_features_gradient(soap_train)  
 
-        grad_info_train = managers_train.get_gradients_info()
+        train_grad_info = managers_train.get_gradients_info()
         # get the information necessary to the computation of gradients. 
         # It has as many rows as dX_dr and each columns correspond to the 
         # index of the structure, the central atom, the neighbor atom and their atomic species.
         # get the derivatives of the representation w.r.t. the atomic positions
-        DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
+        # DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
         
-        # print(grad_info_train[0:10])
-
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
+            a = train_grad_info[:,1]
+            b = train_grad_info[:,2]
+            train_indices_sub = np.where(
+                np.in1d(a%n_atoms, centers_positions) & 
+                np.in1d(b%n_atoms, derivatives_positions))[0]   
+                    
+            forces_train_sub = np.zeros((train_grad_info[train_indices_sub].shape[0],3) )
+            train_grad_info_sub = train_grad_info[train_indices_sub]
 
+            for ind, gi in enumerate(train_grad_info_sub):
+                forces_train_sub[ind] = self.forces_train[gi[0], gi[2]%n_atoms]
+
+            forces_train_flat = forces_train_sub.flatten()
+
+            train_indices_sub_3x = np.empty(( 3*train_indices_sub.size,), dtype=train_indices_sub.dtype)
+            train_indices_sub_3x[0::3] = 3*train_indices_sub
+            train_indices_sub_3x[1::3] = 3*train_indices_sub+1
+            train_indices_sub_3x[2::3] = 3*train_indices_sub+2
+            train_DX_np = soap_grad_array_train[train_indices_sub_3x]
 
 
         soap_test = SphericalInvariants(**hypers)
         managers_test = soap_test.transform(traj_test)
         soap_array_test = managers_test.get_features(soap_test)
-        soap_grad_array_test = managers_test.get_features_gradient(soap_test)      
-        
-        grad_info_test = managers_test.get_gradients_info()
-        DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
+        soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
+        test_grad_info = managers_test.get_gradients_info()
+        # DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
+            a = test_grad_info[:,1]
+            b = test_grad_info[:,2]
+            test_indices_sub = np.where(
+                np.in1d(a%n_atoms, centers_positions) & 
+                np.in1d(b%n_atoms, derivatives_positions))[0]   
+                    
+            forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
+            test_grad_info_sub = test_grad_info[test_indices_sub]
+
+            for ind, gi in enumerate(test_grad_info_sub):
+                forces_test_sub[ind] = self.forces_test[gi[0], gi[2]%n_atoms]
+
+            forces_test_flat = forces_test_sub.flatten()
+
+            test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
+            test_indices_sub_3x[0::3] = 3*test_indices_sub
+            test_indices_sub_3x[1::3] = 3*test_indices_sub+1
+            test_indices_sub_3x[2::3] = 3*test_indices_sub+2
+            test_DX_np = soap_grad_array_test[test_indices_sub_3x]
 
 
 
-        # train_DX = DX_train_sub
-        # train_F = F_train_sub
+            self.train_DX = torch.tensor(train_DX_np)
+            self.test_DX = torch.tensor(test_DX_np)
 
-        # test_DX = DX_test_sub
-        # test_F = F_test_sub
+            self.train_F = torch.tensor(forces_train_flat)
+            self.test_F = torch.tensor(forces_test_flat)
 
-        # # self.test_X = torch.tensor(soap_array_test)      
-        # # self.test_DX = torch.tensor(soap_grad_array_test)
 
-        # DX_train_t = torch.tensor(train_DX)
-        # F_train_t = torch.tensor(train_F)
-
-        # DX_test_t = torch.tensor(test_DX)
-        # F_test_t = torch.tensor(test_F)
-
-        # self.train_DX = torch.flatten(DX_train_t, start_dim=0, end_dim=1)
-        # self.train_F = torch.flatten(F_train_t, start_dim=0, end_dim=1)
-        # self.test_DX = torch.flatten(DX_test_t, start_dim=0, end_dim=1)
-        # self.test_F = torch.flatten(F_test_t, start_dim=0, end_dim=1)
-
-        return soap_grad_array_train, DX_train, grad_info_train
+        return 
 
 
 
