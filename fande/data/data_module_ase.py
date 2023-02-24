@@ -286,26 +286,7 @@ class FandeDataModuleASE(LightningDataModule):
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
-            indices = []
-            for ind,c in enumerate(grad_info_train):
-                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-                    indices.append(ind)
-            
-            DX_train_sub = DX_train[indices]        
-            F_train_sub = np.zeros_like(DX_train_sub[:,:,0])
-            
-            print("Subsampling training forces...")
-            k=-1
-            for ind,c in enumerate(grad_info_train):
-                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-                    k=k+1
-                    # print(self.forces_train[c[0], c[2]%n_atoms, :].shape)
-                    # print(F_train[k].shape)
-                    F_train_sub[k] = self.forces_train[c[0], c[2]%n_atoms, :]
 
-            # print("Sampling of training forces:")
-            # self.train_X = torch.tensor(soap_array_train)      
-            # self.train_DX = torch.tensor(soap_grad_array_train)
 
 
         soap_test = SphericalInvariants(**hypers)
@@ -318,45 +299,30 @@ class FandeDataModuleASE(LightningDataModule):
         #for now just subsampling the grad_array
         if centers_positions is not None and derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
-            indices = []
-            for ind,c in enumerate(grad_info_test):
-                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-                    indices.append(ind)
-
-            DX_test_sub = DX_test[indices]        
-            F_test_sub = np.zeros_like(DX_test_sub[:,:,0])
-            
-            print("Subsampling test forces...")
-            k=-1
-            for ind,c in enumerate(grad_info_test):
-                if (c[1]%n_atoms in centers_positions) or (c[2]%n_atoms in derivatives_positions):
-                    k=k+1
-                    # print(self.forces_train[c[0], c[2]%n_atoms, :].shape)
-                    # print(F_train[k].shape)
-                    F_test_sub[k] = self.forces_test[c[0], c[2]%n_atoms, :]
 
 
-        train_DX = DX_train_sub
-        train_F = F_train_sub
 
-        test_DX = DX_test_sub
-        test_F = F_test_sub
+        # train_DX = DX_train_sub
+        # train_F = F_train_sub
 
-        # self.test_X = torch.tensor(soap_array_test)      
-        # self.test_DX = torch.tensor(soap_grad_array_test)
+        # test_DX = DX_test_sub
+        # test_F = F_test_sub
 
-        DX_train_t = torch.tensor(train_DX)
-        F_train_t = torch.tensor(train_F)
+        # # self.test_X = torch.tensor(soap_array_test)      
+        # # self.test_DX = torch.tensor(soap_grad_array_test)
 
-        DX_test_t = torch.tensor(test_DX)
-        F_test_t = torch.tensor(train_F)
+        # DX_train_t = torch.tensor(train_DX)
+        # F_train_t = torch.tensor(train_F)
 
-        self.train_DX = torch.flatten(DX_train_t, start_dim=0, end_dim=1)
-        self.train_F = torch.flatten(F_train_t, start_dim=0, end_dim=1)
-        self.test_DX = torch.flatten(DX_test_t, start_dim=0, end_dim=1)
-        self.test_F = torch.flatten(F_test_t, start_dim=0, end_dim=1)
+        # DX_test_t = torch.tensor(test_DX)
+        # F_test_t = torch.tensor(test_F)
 
-        return 
+        # self.train_DX = torch.flatten(DX_train_t, start_dim=0, end_dim=1)
+        # self.train_F = torch.flatten(F_train_t, start_dim=0, end_dim=1)
+        # self.test_DX = torch.flatten(DX_test_t, start_dim=0, end_dim=1)
+        # self.test_F = torch.flatten(F_test_t, start_dim=0, end_dim=1)
+
+        return soap_grad_array_train, DX_train, grad_info_train
 
 
 
