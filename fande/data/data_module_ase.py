@@ -26,6 +26,8 @@ from tqdm import tqdm
 
 from ase.units import Bohr, Hartree
 
+from ase.visualize import view
+
 
 from functools import lru_cache
 
@@ -215,7 +217,13 @@ class FandeDataModuleASE(LightningDataModule):
 
     # https://github.com/lab-cosmo/librascal/blob/4e576ae7b9d3740715ab1910def5e1a15ffd1268/tests/python/python_representation_calculator_test.py
     # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
-    def calculate_invariants_librascal(self, soap_params, centers_positions=None, derivatives_positions=None):
+    def calculate_invariants_librascal(
+            self, 
+            soap_params, 
+            train_centers_positions=None, 
+            train_derivatives_positions=None,
+            test_centers_positions=None, 
+            test_derivatives_positions=None,):
 
         species= soap_params['species']
         periodic= soap_params['periodic']
@@ -282,13 +290,13 @@ class FandeDataModuleASE(LightningDataModule):
         # DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
         
         #for now just subsampling the grad_array
-        if centers_positions is not None and derivatives_positions is not None:
+        if train_centers_positions is not None and train_derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
             a = train_grad_info[:,1]
             b = train_grad_info[:,2]
             train_indices_sub = np.where(
-                np.in1d(a%n_atoms, centers_positions) & 
-                np.in1d(b%n_atoms, derivatives_positions))[0]   
+                np.in1d(a%n_atoms, train_centers_positions) & 
+                np.in1d(b%n_atoms, train_derivatives_positions))[0]   
                     
             forces_train_sub = np.zeros((train_grad_info[train_indices_sub].shape[0],3) )
             train_grad_info_sub = train_grad_info[train_indices_sub]
@@ -312,13 +320,13 @@ class FandeDataModuleASE(LightningDataModule):
         test_grad_info = managers_test.get_gradients_info()
         # DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
         #for now just subsampling the grad_array
-        if centers_positions is not None and derivatives_positions is not None:
+        if test_centers_positions is not None and test_derivatives_positions is not None:
             print("Subsampling the gradients for selected positions...")
             a = test_grad_info[:,1]
             b = test_grad_info[:,2]
             test_indices_sub = np.where(
-                np.in1d(a%n_atoms, centers_positions) & 
-                np.in1d(b%n_atoms, derivatives_positions))[0]   
+                np.in1d(a%n_atoms, test_centers_positions) & 
+                np.in1d(b%n_atoms, test_derivatives_positions))[0]   
                     
             forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
             test_grad_info_sub = test_grad_info[test_indices_sub]
@@ -336,7 +344,7 @@ class FandeDataModuleASE(LightningDataModule):
 
 
 
-        if centers_positions is not None and derivatives_positions is not None:
+        if train_centers_positions is not None and train_derivatives_positions is not None:
             self.train_DX = torch.tensor(train_DX_np)
             self.test_DX = torch.tensor(test_DX_np)
             self.train_F = torch.tensor(forces_train_flat)
@@ -508,5 +516,16 @@ class FandeDataModuleASE(LightningDataModule):
         # io.write("data/dump/rotated_traj.xyz", mol_traj, format="extxyz")
 
         return traj, forces_rotated
+
+
+    def view_traj(self):
+
+        print("Train+test trajectories:")
+        print(f"First {len(self.traj_train)} frames is traning traj, remaining is test traj")
+
+        view(self.traj_train)
+        view(self.traj_test)
+             
+        return
 
 
