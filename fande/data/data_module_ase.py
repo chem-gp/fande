@@ -238,9 +238,9 @@ class FandeDataModuleASE(LightningDataModule):
         positions = soap_params['positions']
 
         hypers = dict(soap_type="PowerSpectrum",
-                    interaction_cutoff=5.0,
-                    max_radial=5,
-                    max_angular=5,
+                    interaction_cutoff=4.0,
+                    max_radial=6,
+                    max_angular=6,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -275,8 +275,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         print(f"Total length of train traj is {len(traj_train)}")
         print(f"Total length of test traj is {len(traj_test)}")
-        print("Starting invariants calculation with librascal...")
-
+        
+        print("Calculating invariants on train trajectory with librascal...")
         soap_train = SphericalInvariants(**hypers)
         managers_train = soap_train.transform(traj_train)
         soap_array_train = managers_train.get_features(soap_train)
@@ -312,7 +312,13 @@ class FandeDataModuleASE(LightningDataModule):
             train_indices_sub_3x[2::3] = 3*train_indices_sub+2
             train_DX_np = soap_grad_array_train[train_indices_sub_3x]
 
+        if train_centers_positions is not None and train_derivatives_positions is not None:
+            self.train_DX = torch.tensor(train_DX_np, dtype=torch.float32)
+            self.train_F = torch.tensor(forces_train_flat, dtype=torch.float32)
 
+        del soap_train, managers_train, soap_grad_array_train, train_DX_np
+
+        print("Calculating invariants on test trajectory with librascal...")
         soap_test = SphericalInvariants(**hypers)
         managers_test = soap_test.transform(traj_test)
         soap_array_test = managers_test.get_features(soap_test)
@@ -345,18 +351,11 @@ class FandeDataModuleASE(LightningDataModule):
 
 
         if train_centers_positions is not None and train_derivatives_positions is not None:
-            self.train_DX = torch.tensor(train_DX_np)
-            self.test_DX = torch.tensor(test_DX_np)
-            self.train_F = torch.tensor(forces_train_flat)
-            self.test_F = torch.tensor(forces_test_flat)
-        # else:
-        #     self.train_DX = torch.tensor(train_soap_grad_array_train)
-        #     self.test_DX = torch.tensor(train_soap_grad_array_test)
+            self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
+            self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
 
-        #     forces_train_flat = 
-        #     # forces_train_flat
-        #     self.train_F = torch.tensor(forces_train_flat)
-        #     self.test_F = torch.tensor(forces_test_flat)
+        del soap_test, managers_test, soap_grad_array_test, test_DX_np
+
 
 
         return train_grad_info_sub, test_grad_info_sub
