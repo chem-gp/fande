@@ -223,7 +223,8 @@ class FandeDataModuleASE(LightningDataModule):
             train_centers_positions=None, 
             train_derivatives_positions=None,
             test_centers_positions=None, 
-            test_derivatives_positions=None,):
+            test_derivatives_positions=None,
+            same_centers_derivatives=False):
 
         species= soap_params['species']
         periodic= soap_params['periodic']
@@ -239,8 +240,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         hypers = dict(soap_type="PowerSpectrum",
                     interaction_cutoff=4.0,
-                    max_radial=6,
-                    max_angular=6,
+                    max_radial=5,
+                    max_angular=5,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -294,9 +295,16 @@ class FandeDataModuleASE(LightningDataModule):
             print("Subsampling the gradients for selected positions...")
             a = train_grad_info[:,1]
             b = train_grad_info[:,2]
-            train_indices_sub = np.where(
+
+            if same_centers_derivatives:
+                train_indices_sub = np.where(
+                    np.in1d(a%n_atoms, train_centers_positions) & 
+                    np.in1d(b%n_atoms, train_derivatives_positions) &
+                    (a%n_atoms == b%n_atoms) )[0]
+            else:
+                train_indices_sub = np.where(
                 np.in1d(a%n_atoms, train_centers_positions) & 
-                np.in1d(b%n_atoms, train_derivatives_positions))[0]   
+                np.in1d(b%n_atoms, train_derivatives_positions))[0]
                     
             forces_train_sub = np.zeros((train_grad_info[train_indices_sub].shape[0],3) )
             train_grad_info_sub = train_grad_info[train_indices_sub]
@@ -330,9 +338,16 @@ class FandeDataModuleASE(LightningDataModule):
             print("Subsampling the gradients for selected positions...")
             a = test_grad_info[:,1]
             b = test_grad_info[:,2]
-            test_indices_sub = np.where(
+
+            if same_centers_derivatives:
+                test_indices_sub = np.where(
+                    np.in1d(a%n_atoms, test_centers_positions) & 
+                    np.in1d(b%n_atoms, test_derivatives_positions) &
+                    (a%n_atoms == b%n_atoms) )[0]
+            else:
+                test_indices_sub = np.where(
                 np.in1d(a%n_atoms, test_centers_positions) & 
-                np.in1d(b%n_atoms, test_derivatives_positions))[0]   
+                np.in1d(b%n_atoms, test_derivatives_positions))[0]
                     
             forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
             test_grad_info_sub = test_grad_info[test_indices_sub]
