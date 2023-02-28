@@ -66,11 +66,13 @@ class FandeCalc(Calculator):
 
         # self.energy_var = self.energy_var[0] * self.model_e.normalizing_const
 
-        energy, energy_var = self.predictor.predict_energy_single(self.atoms)
+        # energy, energy_var = self.predictor.predict_energy_single(self.atoms)
 
-        self.energy = energy
+        self.energy = 0.0
 
-        forces, forces_var = self.predictor.predict_forces_single(self.atoms)
+        # forces, forces_var = self.predictor.predict_forces_single(self.atoms)
+
+        forces = self.predictor.predict_forces_single_snapshot_r(self.atoms)
         self.forces = forces
 
         # print("FORCES calculated!")
