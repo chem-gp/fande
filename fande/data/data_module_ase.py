@@ -20,6 +20,7 @@ from dscribe.descriptors import SOAP
 
 from rascal.representations import SphericalInvariants
 
+import ase
 from ase import io
 
 from tqdm import tqdm
@@ -54,9 +55,6 @@ class FandeDataModuleASE(LightningDataModule):
             self.energies_test = self.energies_test * Hartree
             self.forces_train = self.forces_train * Hartree / Bohr
             self.forces_test = self.forces_test * Hartree / Bohr
-
-
-
 
         self.train_DX = None
         self.train_F = None
@@ -99,23 +97,7 @@ class FandeDataModuleASE(LightningDataModule):
 
         self.batch_size = 1_000_000
 
-        # self.save_hyperparameters()
 
-
-        # print(self.forces_train[0,1,:])
-        # print(self.forces_test.shape)
-
-        # print(forces_train_norm[0,:] * (np.max(self.energies_train) - np.min(self.energies_train) ) )
-        # print(forces_test_norm.shape)
-
-        # derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
-        # forces_energies = np.concatenate(
-        #     (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
-        # ).astype(np.float64)
-        # # np.array_equal(forces_energies[:,-1],energies)
-
-        # print(derivatives_descriptors.shape, forces_energies.shape)
-        # print(derivatives_descriptors.dtype, forces_energies.dtype)
 
     def prepare_data(self):
         raise NotImplementedError
@@ -240,8 +222,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         hypers = dict(soap_type="PowerSpectrum",
                     interaction_cutoff=4.0,
-                    max_radial=5,
-                    max_angular=5,
+                    max_radial=6,
+                    max_angular=6,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -262,6 +244,8 @@ class FandeDataModuleASE(LightningDataModule):
                     #             ),
                     compute_gradients=True
                     )
+        
+        self.soap_hypers = hypers
         
         traj_train = self.traj_train
         traj_test = self.traj_test
@@ -365,7 +349,7 @@ class FandeDataModuleASE(LightningDataModule):
 
 
 
-        if train_centers_positions is not None and train_derivatives_positions is not None:
+        if test_centers_positions is not None and test_derivatives_positions is not None:
             self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
             self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
 
@@ -376,6 +360,114 @@ class FandeDataModuleASE(LightningDataModule):
         return train_grad_info_sub, test_grad_info_sub
 
 
+
+    def calculate_test_invariants_librascal(
+            self, 
+            test_centers_positions=None, 
+            test_derivatives_positions=None,
+            same_centers_derivatives=False):
+
+        
+        traj_test = self.traj_test
+
+        for f in traj_test:
+            f.wrap(eps=1e-18)
+
+        n_atoms = len(traj_test[0])
+
+        print(f"Total length of test traj is {len(traj_test)}")
+        
+        hypers = self.soap_hypers 
+
+        print("Calculating invariants on test trajectory with librascal...")
+        soap_test = SphericalInvariants(**hypers)
+        managers_test = soap_test.transform(traj_test)
+        # soap_array_test = managers_test.get_features(soap_test)
+        soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
+        test_grad_info = managers_test.get_gradients_info()
+        # DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
+        #for now just subsampling the grad_array
+        if test_centers_positions is not None and test_derivatives_positions is not None:
+            print("Subsampling the gradients for selected positions...")
+            a = test_grad_info[:,1]
+            b = test_grad_info[:,2]
+
+            if same_centers_derivatives:
+                test_indices_sub = np.where(
+                    np.in1d(a%n_atoms, test_centers_positions) & 
+                    np.in1d(b%n_atoms, test_derivatives_positions) &
+                    (a%n_atoms == b%n_atoms) )[0]
+            else:
+                test_indices_sub = np.where(
+                np.in1d(a%n_atoms, test_centers_positions) & 
+                np.in1d(b%n_atoms, test_derivatives_positions))[0]
+                    
+            forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
+            test_grad_info_sub = test_grad_info[test_indices_sub]
+
+            for ind, gi in enumerate(test_grad_info_sub):
+                forces_test_sub[ind] = self.forces_test[gi[0], gi[2]%n_atoms]
+
+            forces_test_flat = forces_test_sub.flatten()
+
+            test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
+            test_indices_sub_3x[0::3] = 3*test_indices_sub
+            test_indices_sub_3x[1::3] = 3*test_indices_sub+1
+            test_indices_sub_3x[2::3] = 3*test_indices_sub+2
+            test_DX_np = soap_grad_array_test[test_indices_sub_3x]
+
+
+
+        if test_centers_positions is not None and test_derivatives_positions is not None:
+            self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
+            self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
+
+        del soap_test, managers_test, soap_grad_array_test, test_DX_np
+
+
+
+        return test_grad_info_sub
+    
+
+    def calculate_snapshot_invariants_librascal(
+            self,
+            snapshot: ase.Atoms, 
+            same_centers_derivatives=True):
+        
+
+        traj_test = [snapshot]
+
+        for f in traj_test:
+            f.wrap(eps=1e-18)
+
+        n_atoms = len(traj_test[0])
+
+        print(f"Calculating full invariants for a single snapshot...")      
+        hypers = self.soap_hypers 
+        soap_test = SphericalInvariants(**hypers)
+        managers_test = soap_test.transform(traj_test)
+        soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
+        test_grad_info = managers_test.get_gradients_info()
+        if same_centers_derivatives:
+            print("Subsampling the gradients for selected positions...")
+            a = test_grad_info[:,1]
+            b = test_grad_info[:,2]
+            test_indices_sub = np.where((a%n_atoms == b%n_atoms))[0]
+            
+            test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
+            test_indices_sub_3x[0::3] = 3*test_indices_sub
+            test_indices_sub_3x[1::3] = 3*test_indices_sub+1
+            test_indices_sub_3x[2::3] = 3*test_indices_sub+2
+            test_DX_np = soap_grad_array_test[test_indices_sub_3x]
+
+            self.snap_DX = torch.tensor(test_DX_np, dtype=torch.float32)
+
+        else:
+            raise NotImplementedError
+
+        del soap_test, managers_test, soap_grad_array_test, test_DX_np
+
+        return test_grad_info
 
 
 

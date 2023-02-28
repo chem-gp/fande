@@ -536,6 +536,53 @@ class PredictorASE:
             return
 
 
+    def predict_forces_single_snapshot_r(self, snapshot):
+
+            # if self.hparams["device"] == "gpu":
+            #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
+
+            n_atoms = len(snapshot)
+
+            self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+
+            snap_DX = self.fdm.snap_DX
+
+            snap_DX = torch.tensor(snap_DX, dtype = torch.float32 )
+            zeros_F = torch.zeros_like(snap_DX[:,0])
+
+            print(snap_DX.shape, zeros_F.shape)
+
+            test = TensorDataset(snap_DX, zeros_F)
+            test_dl = DataLoader(test, batch_size=self.batch_size)
+
+            res = self.trainer_f.predict(self.model_f, test_dl)[0]
+
+            predictions_torch = res.mean
+
+            print("predictions done!")
+
+            # variances_torch = res.variance
+            # print(variances_torch, res.confidence_region())
+
+            # lower, upper = res.confidence_region()
+            # lower = 0.1 * lower.cpu().detach().numpy()
+            # upper = 0.1 * upper.cpu().detach().numpy()
+
+            # lower = lower.tolist()
+            # upper = upper.tolist()
+            # print(lower, upper)
+
+
+            predictions = res.mean.cpu().detach().numpy()
+            actual_values = self.test_F.cpu().detach().numpy()
+
+            
+            pred_forces = predictions.reshape((n_atoms, 3))
+
+            return pred_forces
+
+
+
     def predict_energy_single(self,snapshot):
         # Check with XTB values:
         # e_ = self.get_xtb_energy(snapshot)
