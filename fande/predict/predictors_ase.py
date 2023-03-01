@@ -17,6 +17,9 @@ from ase.units import Bohr, Hartree
 from xtb.ase.calculator import XTB
 
 
+from ase.visualize import view
+
+
 class SimplePredictorASE:
     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
         
@@ -582,9 +585,8 @@ class PredictorASE:
             return pred_forces
 
 
-    def test_errors(self, plot=False):
+    def test_errors(self, plot=False, view_worst_atoms=False):
         ## predictor maximal error with respect to fdm.test_DX and fdm.test_F
-
 
         test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
         test_dl = DataLoader(test, batch_size=self.batch_size)
@@ -604,7 +606,33 @@ class PredictorASE:
             plt.show()
 
 
-        return predictions_errors
+        print("MSE: ", np.mean(predictions_errors**2) )
+        print("MAE: ", np.mean( abs(predictions_errors)) )
+        print("Max error: ", max(abs(predictions_errors)))
+
+
+        print("Analyzing where predictions are the worst...")          
+        def k_largest_index_argsort(a, k):
+            # Helper function to find indices for k largest values
+            idx = np.argsort(a.ravel())[:-k-1:-1]
+            return np.column_stack(np.unravel_index(idx, a.shape))
+
+        n_test_snaps = 20
+        n_atoms = 264
+
+        abs_errors = abs(predictions_errors).reshape(n_test_snaps, n_atoms,-1)
+
+        worst_indices = k_largest_index_argsort(abs_errors, 25)
+        worst_atoms = worst_indices[:,1]
+        worst_snapshots = worst_indices[:,1]
+
+        print("Atomic indices with worst predictions:", worst_atoms)
+
+        if view_worst_atoms:
+            view( [ self.fdm.traj_test[0][worst_atoms], self.fdm.traj_test[0] ]  ) #+ self.fdm.traj_test[0])
+
+
+        return abs_errors, worst_indices
 
 
     def predict_energy_single(self,snapshot):

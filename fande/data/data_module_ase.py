@@ -221,7 +221,7 @@ class FandeDataModuleASE(LightningDataModule):
         positions = soap_params['positions']
 
         hypers = dict(soap_type="PowerSpectrum",
-                    interaction_cutoff=4.0,
+                    interaction_cutoff=3.5,
                     max_radial=6,
                     max_angular=6,
                     gaussian_sigma_constant=0.5,
