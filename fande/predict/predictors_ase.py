@@ -582,6 +582,30 @@ class PredictorASE:
             return pred_forces
 
 
+    def test_errors(self, plot=False):
+        ## predictor maximal error with respect to fdm.test_DX and fdm.test_F
+
+
+        test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
+        test_dl = DataLoader(test, batch_size=self.batch_size)
+
+        res = self.trainer_f.predict(self.model_f, test_dl)[0]
+
+        predictions_torch = res.mean
+
+        predictions_errors = predictions_torch.detach().cpu() - self.fdm.test_F.detach().cpu()
+        predictions_errors = predictions_errors.numpy()
+
+        if plot:
+            plt.plot(predictions_errors)
+            plt.show()
+
+            plt.hist(predictions_errors, bins=30)
+            plt.show()
+
+
+        return predictions_errors
+
 
     def predict_energy_single(self,snapshot):
         # Check with XTB values:
