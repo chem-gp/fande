@@ -622,7 +622,7 @@ class PredictorASE:
 
         abs_errors = abs(predictions_errors).reshape(n_test_snaps, n_atoms,-1)
 
-        worst_indices = k_largest_index_argsort(abs_errors, 25)
+        worst_indices = k_largest_index_argsort(abs_errors, 20)
         worst_atoms = worst_indices[:,1]
         worst_snapshots = worst_indices[:,1]
 
