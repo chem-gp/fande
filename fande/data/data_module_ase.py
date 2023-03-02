@@ -242,7 +242,8 @@ class FandeDataModuleASE(LightningDataModule):
                     #                    accuracy=1.0e-05
                     #                 )
                     #             ),
-                    compute_gradients=True
+                    compute_gradients=True,
+                    expansion_by_species_method='structure wise'
                     )
         
         self.soap_hypers = hypers
