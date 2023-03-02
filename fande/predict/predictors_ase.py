@@ -633,6 +633,24 @@ class PredictorASE:
         if view_worst_atoms:
             view( [ self.fdm.traj_test[0][worst_atoms], self.fdm.traj_test[0] ]  ) #+ self.fdm.traj_test[0])
 
+            # make plot of worst errors (debug needed)
+            errors_list = [abs_errors[tuple(i)] for i in worst_indices]
+            xs = np.arange(len(errors_list))
+            ys = errors_list
+            plt.plot(xs, ys, marker='x', linestyle='None')
+            ind=0
+            for x,y in zip(xs,ys):
+
+                label = "{:.2f}".format(y)
+
+                plt.annotate(worst_indices[ind], # this is the text
+                            (x,y), # these are the coordinates to position the label
+                            textcoords="offset points", # how to position the text
+                            xytext=(0,10), # distance from text to points (x,y)
+                            ha='center') # horizontal alignment can be left, right or center
+                ind=ind+1
+            plt.show()
+
 
         return abs_errors, worst_indices
 
