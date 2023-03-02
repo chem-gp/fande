@@ -405,10 +405,12 @@ class FandeDataModuleASE(LightningDataModule):
             forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
             test_grad_info_sub = test_grad_info[test_indices_sub]
 
+
             for ind, gi in enumerate(test_grad_info_sub):
                 forces_test_sub[ind] = self.forces_test[gi[0], gi[2]%n_atoms]
 
             forces_test_flat = forces_test_sub.flatten()
+
 
             test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
             test_indices_sub_3x[0::3] = 3*test_indices_sub
@@ -422,8 +424,12 @@ class FandeDataModuleASE(LightningDataModule):
             self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
             self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
 
+        print(self.test_F.shape)
+
         del soap_test, managers_test, soap_grad_array_test, test_DX_np
 
+
+        # need to also update forces...
 
 
         return test_grad_info_sub

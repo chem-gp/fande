@@ -374,12 +374,14 @@ class PredictorASE:
             # if self.hparams["device"] == "gpu":
             #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
 
-            test = TensorDataset(self.test_DX, self.test_F)
+            test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
             test_dl = DataLoader(test, batch_size=self.batch_size)
 
             res = self.trainer_f.predict(self.model_f, test_dl)[0]
 
             predictions_torch = res.mean
+
+            print(self.test_F.shape)
 
             # variances_torch = res.variance
             # print(variances_torch, res.confidence_region())
@@ -395,7 +397,7 @@ class PredictorASE:
             # print("HI")
 
             predictions = res.mean.cpu().detach().numpy()
-            actual_values = self.test_F.cpu().detach().numpy()
+            actual_values = self.fdm.test_F.cpu().detach().numpy()
             plt.rcParams["figure.figsize"] = (30, 10)
 
             predictions_xyz = np.concatenate( (predictions[0::3], predictions[1::3], predictions[2::3]))
