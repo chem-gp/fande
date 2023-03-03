@@ -7,6 +7,7 @@ class AttrDict(dict):
     # """ Dictionary subclass whose entries can be accessed by attributes (as well
     #     as normally).
     def __init__(self, *args, **kwargs):
+        """Description"""
         super().__init__(*args, **kwargs)
         self.__dict__ = self
 
