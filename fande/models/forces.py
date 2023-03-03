@@ -113,7 +113,17 @@ class ExactGPModelForces(ExactGP, LightningModule):
 
 
 class ModelForces(LightningModule):
-    """batch independent multioutput exact gp model."""
+    r"""
+    Batch independent multioutput exact gp model.
+
+    .. math::
+        \begin{equation}
+        k_{i}(\mathbf{x}, \mathbf{x'}) 
+        \end{equation}
+
+    .. note::
+        Simple note.
+    """
 
     def __init__(self, train_x, train_y, hparams, learning_rate):
         """Initialize gp model with mean and covar."""
@@ -206,6 +216,7 @@ class ModelForces(LightningModule):
     #     return {'val_loss': loss}
 
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
+        """wrapper around lightning function"""
         return self(batch[0])
 
 

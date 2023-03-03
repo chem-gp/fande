@@ -10,4 +10,4 @@ fande project
 .. toctree::
    :maxdepth: 2
 
-   purpose.rst
+   models.rst

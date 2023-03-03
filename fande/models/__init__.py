@@ -1,3 +1,7 @@
+"""
+Docs for fande models.
+"""
+
 from .forces import ModelForces
 
 from .energies import ModelEnergies
