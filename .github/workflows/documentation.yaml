@@ -6,12 +6,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
+      - name: Install fande dependencies
+        run: |
+          conda env create -f fande.yml; conda activate fande
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
       - name: Sphinx build
         run: |
-          ls; sphinx-build docs/source _build
+          sphinx-build docs/source _build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
