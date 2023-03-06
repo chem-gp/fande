@@ -9,7 +9,7 @@ jobs:
       - name: Install fande dependencies
         run: |
           #conda env create -f fande.yml; conda activate fande
-          pip install gpytorch
+          pip install gpytorch pytorch-lightning
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
