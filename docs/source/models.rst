@@ -23,5 +23,5 @@ Standard Models
    :members:
 
 
-.. autoclass:: SVGPModelForces
+.. autoclass:: ModelEnergies
    :members:
