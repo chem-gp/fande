@@ -1,18 +1,17 @@
 name: Docs
-# on: [workflow_dispatch]
-on:
-  schedule:
-    - cron: '0 0 * * 0'
+on: [push, pull_request, workflow_dispatch]
+# on:
+#   schedule:
+#     - cron: '0 0 * * 0'
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - name: Install fande dependencies
-        run: |
-          # conda env create -f fande.yml; conda activate fande
-          pip install gpytorch pytorch-lightning
+      # - name: Install fande dependencies
+      #   run: |
+      #     pip install gpytorch pytorch-lightning
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme

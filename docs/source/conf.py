@@ -9,6 +9,15 @@ sys.path.insert(0, os.path.abspath('../..'))
 #
 # needs_sphinx = '1.0'
 
+autodoc_mock_imports = [
+    "gpytorch", 
+    "torch", 
+    "pytorch_lightning", 
+    "wandb", 
+    "numpy",
+    "tqdm"
+    ]
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
