@@ -1,4 +1,4 @@
-from ase.calculators.calculator import Calculator
+# from ase.calculators.calculator import Calculator, all_changes
 import numpy as np
 
 from ase.units import Hartree, Bohr
@@ -13,25 +13,45 @@ from ase import Atoms
 from fande.predict import PredictorASE
 from fande.predict import SimplePredictor
 
+from ase.neighborlist import NeighborList
+from ase.stress import full_3x3_to_voigt_6_stress
+
+
+
 from xtb.ase.calculator import XTB
 
 
 class FandeCalc(Calculator):
     """See for example:
+    Calculator to be used with Atomic Simulation Environment.
+
+    See example calculator:
     https://gitlab.com/ase/ase/-/blob/master/ase/calculators/emt.py
     """
 
     implemented_properties = ["energy", "forces"]
-    default_parameters = dict(charge=0, mult=1)
+    nolabel = True
 
-    def __init__(self, predictor, **kwargs):
+    # default_parameters = dict(charge=0, mult=1)
+
+    def __init__(self, 
+                 predictor: PredictorASE, 
+                 **kwargs):
         Calculator.__init__(self, **kwargs)
+
         # self.atoms = atoms
         # self.predictor = SimplePredictor(
         #     hparams, model_e, trainer_e, model_f, trainer_f
         # )
 
         self.predictor = predictor
+
+        self.energy=None
+        self.forces=None
+
+        self.nl = None
+
+        # self.results = None
 
         # self.xtb_calc = XTB(method="GFN2-xTB")
 
@@ -45,9 +65,26 @@ class FandeCalc(Calculator):
         self.deds = np.empty(len(atoms))
         self.forces_var = np.empty((len(atoms), 3))
 
-    def calculate(self, atoms=None, properties=["energy"], system_changes=all_changes):
+# see example https://github.com/qsnake/ase/blob/master/ase/calculators/emt.py
+    def calculate(self, 
+                  atoms=None, 
+                  properties=None, 
+                  system_changes=all_changes):
+
+        if properties is None:
+            properties = self.implemented_properties
 
         Calculator.calculate(self, atoms, properties, system_changes)
+
+        self.positions = atoms.get_positions().copy()
+        self.cell = atoms.get_cell().copy()
+        self.pbc = atoms.get_pbc().copy()
+        
+        # self.nl.update(atoms)      
+        # self.energy = 0.0
+        # self.sigma1[:] = 0.0
+        # self.forces[:] = 0.0
+
 
         if "numbers" in system_changes:
             self.initialize(self.atoms)
@@ -70,19 +107,26 @@ class FandeCalc(Calculator):
 
         self.energy = 0.0
 
+        natoms = len(self.atoms)
+        energies = np.zeros(natoms)
+        forces = np.zeros((natoms, 3))
+        stresses = np.zeros((natoms, 3, 3))
+
         # forces, forces_var = self.predictor.predict_forces_single(self.atoms)
 
-        forces = self.predictor.predict_forces_single_snapshot_r(self.atoms)
+        forces = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
         self.forces = forces
 
         # print("FORCES calculated!")
+        # natoms = len(self.atoms)
+        # self.energies[:] = 0
+        # self.sigma1[:] = 0.0
+        # # self.forces[:] = 0.0
+        # self.stress[:] = 0.0
 
-        self.energies[:] = 0
-        self.sigma1[:] = 0.0
-        # self.forces[:] = 0.0
-        self.stress[:] = 0.0
 
-        natoms = len(self.atoms)
+
+        
 
 
         # self.forces = self.forces.reshape(3, natoms).T
@@ -99,38 +143,59 @@ class FandeCalc(Calculator):
         self.results["free_energy"] = self.energy
         self.results["forces"] = self.forces
 
+
         if "stress" in properties:
             raise PropertyNotImplementedError
 
-    def get_xtb_energy(self, atoms=None):
 
-        if atoms is not None:
-            atoms_ = atoms.copy()
-            atoms_.calc = self.xtb_calc
-        else:
-            atoms_ = self.atoms.copy()
-            atoms_.calc = self.xtb_calc
+    def update(self, atoms):
+        if (self.energy is None or
+            len(self.numbers) != len(atoms) or
+            (self.numbers != atoms.get_atomic_numbers()).any()):
+            self.initialize(atoms)
+            self.calculate(atoms)
+        elif ((self.positions != atoms.get_positions()).any() or
+              (self.pbc != atoms.get_pbc()).any() or
+              (self.cell != atoms.get_cell()).any()):
+            self.calculate(atoms)
 
-        res_ = atoms_.get_potential_energy()
+    def get_forces(self, atoms):
+        self.update(atoms)
+        return self.forces.copy()
 
-        del atoms_
+    def get_potential_energy(self, atoms):
+        self.update(atoms)
+        return self.energy
 
-        return res_
+    # def get_xtb_energy(self, atoms=None):
 
-    def get_xtb_forces(self, atoms=None):
+    #     if atoms is not None:
+    #         atoms_ = atoms.copy()
+    #         atoms_.calc = self.xtb_calc
+    #     else:
+    #         atoms_ = self.atoms.copy()
+    #         atoms_.calc = self.xtb_calc
 
-        if atoms is not None:
-            atoms_ = atoms.copy()
-            atoms_.calc = self.xtb_calc
-        else:
-            atoms_ = self.atoms.copy()
-            atoms_.calc = self.xtb_calc
+    #     res_ = atoms_.get_potential_energy()
 
-        res_ = atoms_.get_forces()
+    #     del atoms_
 
-        del atoms_
+    #     return res_
 
-        return res_
+    # def get_xtb_forces(self, atoms=None):
+
+    #     if atoms is not None:
+    #         atoms_ = atoms.copy()
+    #         atoms_.calc = self.xtb_calc
+    #     else:
+    #         atoms_ = self.atoms.copy()
+    #         atoms_.calc = self.xtb_calc
+
+    #     res_ = atoms_.get_forces()
+
+    #     del atoms_
+
+    #     return res_
 
 
 
@@ -139,3 +204,170 @@ class FandeCalc(Calculator):
 # atoms = molecule("CH3CH2OCH3")
 # atoms.calc = FandeCalc(hparams, hparams, model_e, trainer_e, model_f, trainer_f)
 # print( atoms.get_potential_energy(), atoms.get_forces() )
+
+
+
+
+
+
+
+
+
+# class FandeCalc2(Calculator):
+
+#     implemented_properties = ['energy', 'energies', 'forces', 'free_energy']
+#     implemented_properties += ['stress', 'stresses']  # bulk properties
+#     default_parameters = {
+#         'epsilon': 1.0,
+#         'sigma': 1.0,
+#         'rc': None,
+#         'ro': None,
+#         'smooth': False,
+#     }
+#     nolabel = True
+
+#     def __init__(
+#             self, 
+#             predictor: PredictorASE, 
+#             **kwargs):
+
+#         Calculator.__init__(self, **kwargs)
+
+#         if self.parameters.rc is None:
+#             self.parameters.rc = 3 * self.parameters.sigma
+
+#         if self.parameters.ro is None:
+#             self.parameters.ro = 0.66 * self.parameters.rc
+
+#         self.nl = None
+
+#         self.predictor = predictor
+
+#     def calculate(
+#         self,
+#         atoms=None,
+#         properties=None,
+#         system_changes=all_changes,
+#     ):
+#         if properties is None:
+#             properties = self.implemented_properties
+
+#         Calculator.calculate(self, atoms, properties, system_changes)
+
+#         natoms = len(self.atoms)
+
+#         sigma = self.parameters.sigma
+#         epsilon = self.parameters.epsilon
+#         rc = self.parameters.rc
+#         ro = self.parameters.ro
+#         smooth = self.parameters.smooth
+
+#         if self.nl is None or 'numbers' in system_changes:
+#             self.nl = NeighborList(
+#                 [rc / 2] * natoms, self_interaction=False, bothways=True
+#             )
+
+#         self.nl.update(self.atoms)
+
+#         positions = self.atoms.positions
+#         cell = self.atoms.cell
+
+#         # potential value at rc
+#         e0 = 4 * epsilon * ((sigma / rc) ** 12 - (sigma / rc) ** 6)
+
+#         energies = np.zeros(natoms)
+#         forces = np.zeros((natoms, 3))
+#         stresses = np.zeros((natoms, 3, 3))
+
+#         forces = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
+#         self.forces = forces
+
+#         # for ii in range(natoms):
+#         #     neighbors, offsets = self.nl.get_neighbors(ii)
+#         #     cells = np.dot(offsets, cell)
+
+#         #     # pointing *towards* neighbours
+#         #     distance_vectors = positions[neighbors] + cells - positions[ii]
+
+#         #     r2 = (distance_vectors ** 2).sum(1)
+#         #     c6 = (sigma ** 2 / r2) ** 3
+#         #     c6[r2 > rc ** 2] = 0.0
+#         #     c12 = c6 ** 2
+
+#         #     if smooth:
+#         #         cutoff_fn = cutoff_function(r2, rc**2, ro**2)
+#         #         d_cutoff_fn = d_cutoff_function(r2, rc**2, ro**2)
+
+#         #     pairwise_energies = 4 * epsilon * (c12 - c6)
+#         #     pairwise_forces = -24 * epsilon * (2 * c12 - c6) / r2  # du_ij
+
+#         #     if smooth:
+#         #         # order matters, otherwise the pairwise energy is already modified
+#         #         pairwise_forces = (
+#         #             cutoff_fn * pairwise_forces + 2 * d_cutoff_fn * pairwise_energies
+#         #         )
+#         #         pairwise_energies *= cutoff_fn
+#         #     else:
+#         #         pairwise_energies -= e0 * (c6 != 0.0)
+
+#         #     pairwise_forces = pairwise_forces[:, np.newaxis] * distance_vectors
+
+#         #     energies[ii] += 0.5 * pairwise_energies.sum()  # atomic energies
+#         #     forces[ii] += pairwise_forces.sum(axis=0)
+
+#         #     stresses[ii] += 0.5 * np.dot(
+#         #         pairwise_forces.T, distance_vectors
+#         #     )  # equivalent to outer product
+
+#         # no lattice, no stress
+#         if self.atoms.cell.rank == 3:
+#             stresses = full_3x3_to_voigt_6_stress(stresses)
+#             self.results['stress'] = stresses.sum(axis=0) / self.atoms.get_volume()
+#             self.results['stresses'] = stresses / self.atoms.get_volume()
+            
+
+#         energy = energies.sum()
+#         self.results['energy'] = energy
+#         self.results['energies'] = energies
+
+#         self.results['free_energy'] = energy
+
+#         self.results['forces'] = forces
+
+
+# def cutoff_function(r, rc, ro):
+#     """Smooth cutoff function.
+
+#     Goes from 1 to 0 between ro and rc, ensuring
+#     that u(r) = lj(r) * cutoff_function(r) is C^1.
+
+#     Defined as 1 below ro, 0 above rc.
+
+#     Note that r, rc, ro are all expected to be squared,
+#     i.e. `r = r_ij^2`, etc.
+
+#     Taken from https://github.com/google/jax-md.
+
+#     """
+
+#     return np.where(
+#         r < ro,
+#         1.0,
+#         np.where(r < rc, (rc - r) ** 2 * (rc + 2 * r - 3 * ro) / (rc - ro) ** 3, 0.0),
+#     )
+
+
+# def d_cutoff_function(r, rc, ro):
+#     """Derivative of smooth cutoff function wrt r.
+
+#     Note that `r = r_ij^2`, so for the derivative wrt to `r_ij`,
+#     we need to multiply `2*r_ij`. This gives rise to the factor 2
+#     above, the `r_ij` is cancelled out by the remaining derivative
+#     `d r_ij / d d_ij`, i.e. going from scalar distance to distance vector.
+#     """
+
+#     return np.where(
+#         r < ro,
+#         0.0,
+#         np.where(r < rc, 6 * (rc - r) * (ro - r) / (rc - ro) ** 3, 0.0),
+#     )

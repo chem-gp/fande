@@ -15,6 +15,7 @@ autodoc_mock_imports = [
     "pytorch_lightning", 
     "wandb", 
     "numpy",
+    "ase",
     "tqdm"
     ]
 
