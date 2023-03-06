@@ -21,3 +21,7 @@ Standard Models
 
 .. autoclass:: ModelForces
    :members:
+
+
+.. autoclass:: SVGPModelForces
+   :members:

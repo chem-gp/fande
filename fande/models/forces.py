@@ -25,6 +25,9 @@ from gpytorch.variational import CholeskyVariationalDistribution
 from gpytorch.variational import VariationalStrategy
 
 class SVGPModelForces(ApproximateGP):
+    """
+    Docs for SVGP model of forces...
+    """
     def __init__(self, inducing_points):
         variational_distribution = CholeskyVariationalDistribution(inducing_points.size(0))
         variational_strategy = VariationalStrategy(self, inducing_points, variational_distribution, learn_inducing_locations=True)
