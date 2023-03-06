@@ -8,7 +8,8 @@ jobs:
       - uses: actions/setup-python@v2
       - name: Install fande dependencies
         run: |
-          conda env create -f fande.yml; conda activate fande
+          #conda env create -f fande.yml; conda activate fande
+          pip install gpytorch
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
