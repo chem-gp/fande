@@ -201,7 +201,13 @@ class FandeCalc(Calculator):
         self.atomic_groups_titles = titles        
 
 
-    def make_forces_errors_plot(self, atomic_groups=None, titles=None, plot_show=True, plot_file=None, **kwargs):
+    def make_forces_errors_plot(self, 
+                                atomic_groups=None, 
+                                titles=None,
+                                steps_range=-1, 
+                                plot_show=True, 
+                                plot_file=None, 
+                                **kwargs):
         """
         Plot forces errors.
         """
@@ -218,11 +224,11 @@ class FandeCalc(Calculator):
 
         for n in range(ngroups):
             plt.figure(figsize=(20, 6), dpi=80)
-            plt.plot(abs(forces_errors[:, atomic_groups[n], :]).max(axis=-1), marker='o', label='x', linestyle='None')
+            plt.plot(abs(forces_errors[0:steps_range, atomic_groups[n], :]).max(axis=-1), marker='o', label='x', linestyle='None')
             plt.legend(atomic_groups[n], title=titles[n], ncol=3, loc='center left', bbox_to_anchor=(1, 0.5),title_fontsize=18, fontsize=16)
             plt.xlabel("step", fontsize=16)
-            plt.ylabel("forces error", fontsize=16)
-            if plot_file is not None:
+            plt.ylabel("forces max abs component error", fontsize=16)
+            if plot_file is not None and plot_show is False:
                 plt.savefig(os.path.splitext(plot_file)[0] + "_group_{}.png".format(n), bbox_inches='tight' )
                 plt.close()
                 print("Plot saved to {}".format(plot_file) )
