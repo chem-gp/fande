@@ -51,6 +51,9 @@ class FandeCalc(Calculator):
 
         self.nl = None
 
+        self.supporting_calc = None
+        self.forces_errors = []
+
         # self.results = None
 
         # self.xtb_calc = XTB(method="GFN2-xTB")
@@ -117,6 +120,13 @@ class FandeCalc(Calculator):
         forces = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
         self.forces = forces
 
+        # comparing with supporting calculation
+        if self.supporting_calc is not None:
+            a_ = self.atoms.copy()
+            a_.calc = self.supporting_calc
+            supporting_forces = a_.get_forces()
+            self.forces_errors.append(forces-supporting_forces)
+
         # print("FORCES calculated!")
         # natoms = len(self.atoms)
         # self.energies[:] = 0
@@ -162,10 +172,14 @@ class FandeCalc(Calculator):
     def get_forces(self, atoms):
         self.update(atoms)
         return self.forces.copy()
+    
 
     def get_potential_energy(self, atoms):
         self.update(atoms)
         return self.energy
+
+    def get_forces_errors(self):
+        return np.array(self.forces_errors)
 
     # def get_xtb_energy(self, atoms=None):
 
