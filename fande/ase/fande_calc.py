@@ -1,6 +1,8 @@
 # from ase.calculators.calculator import Calculator, all_changes
 import numpy as np
 
+import os
+
 from ase.units import Hartree, Bohr
 from ase.calculators.calculator import (
     Calculator,
@@ -36,7 +38,8 @@ class FandeCalc(Calculator):
     # default_parameters = dict(charge=0, mult=1)
 
     def __init__(self, 
-                 predictor: PredictorASE, 
+                 predictor: PredictorASE,
+                 forces_errors_plot_file=None, 
                  **kwargs):
         Calculator.__init__(self, **kwargs)
 
@@ -54,6 +57,7 @@ class FandeCalc(Calculator):
 
         self.supporting_calc = None
         self.forces_errors = []
+        self.forces_errors_plot_file = forces_errors_plot_file
 
         # self.results = None
 
@@ -128,6 +132,10 @@ class FandeCalc(Calculator):
             supporting_forces = a_.get_forces()
             self.forces_errors.append(forces-supporting_forces)
 
+
+            if self.forces_errors_plot_file is not None and len(self.forces_errors)%self.forces_errors_loginterval==0:
+                self.make_forces_errors_plot(plot_show=False, plot_file=self.forces_errors_plot_file)
+
         # print("FORCES calculated!")
         # natoms = len(self.atoms)
         # self.energies[:] = 0
@@ -182,11 +190,28 @@ class FandeCalc(Calculator):
     def get_forces_errors(self):
         return np.array(self.forces_errors)
     
+    def set_forces_errors_plot_file(self, forces_errors_plot_file, loginterval=10):
+        self.forces_errors_plot_file = forces_errors_plot_file
+        self.forces_errors_loginterval = loginterval
 
-    def make_force_errors_plot(self, atomic_groups, titles=None, **kwargs):
+    def set_atomic_groups(self, atomic_groups, titles=None):
+        self.atomic_groups = atomic_groups
+        if titles is None:
+            titles = [f"Group {n}" for n in range(len(atomic_groups))]
+        self.atomic_groups_titles = titles        
+
+
+    def make_forces_errors_plot(self, atomic_groups=None, titles=None, plot_show=True, plot_file=None, **kwargs):
         """
         Plot forces errors.
         """
+        if atomic_groups is None:
+            atomic_groups = self.atomic_groups
+            if titles is None:
+                titles = self.atomic_groups_titles
+        
+        if plot_file is None:
+            plot_file = self.forces_errors_plot_file
 
         ngroups = len(atomic_groups)
         forces_errors = self.get_forces_errors()
@@ -194,10 +219,15 @@ class FandeCalc(Calculator):
         for n in range(ngroups):
             plt.figure(figsize=(20, 6), dpi=80)
             plt.plot(abs(forces_errors[:, atomic_groups[n], :]).max(axis=-1), marker='o', label='x', linestyle='None')
-            plt.legend(atomic_groups[n], title=titles[n], ncol=4, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=16)
+            plt.legend(atomic_groups[n], title=titles[n], ncol=3, loc='center left', bbox_to_anchor=(1, 0.5),title_fontsize=18, fontsize=16)
             plt.xlabel("step", fontsize=16)
             plt.ylabel("forces error", fontsize=16)
-            plt.show()
+            if plot_file is not None:
+                plt.savefig(os.path.splitext(plot_file)[0] + "_group_{}.png".format(n), bbox_inches='tight' )
+                plt.close()
+                print("Plot saved to {}".format(plot_file) )
+            if plot_show:
+                plt.show()
 
 
         return 

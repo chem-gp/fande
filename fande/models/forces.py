@@ -56,7 +56,8 @@ class ExactGPModelForces(ExactGP, LightningModule):
         self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
         # self.covar_module = ScaleKernel( RBFKernel() )
         # self.covar_module = LinearKernel()
-        self.mean_module = ConstantMean()
+        # self.mean_module = ConstantMean()
+        self.mean_module = ZeroMean()
         # self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
         # self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
 
