@@ -16,6 +16,7 @@ from fande.predict import SimplePredictor
 from ase.neighborlist import NeighborList
 from ase.stress import full_3x3_to_voigt_6_stress
 
+import matplotlib.pyplot as plt
 
 
 from xtb.ase.calculator import XTB
@@ -180,6 +181,26 @@ class FandeCalc(Calculator):
 
     def get_forces_errors(self):
         return np.array(self.forces_errors)
+    
+
+    def make_force_errors_plot(self, atomic_groups, titles=None, **kwargs):
+        """
+        Plot forces errors.
+        """
+
+        ngroups = len(atomic_groups)
+        forces_errors = self.get_forces_errors()
+
+        for n in range(ngroups):
+            plt.figure(figsize=(20, 6), dpi=80)
+            plt.plot(abs(forces_errors[:, atomic_groups[n], :]).max(axis=-1), marker='o', label='x', linestyle='None')
+            plt.legend(atomic_groups[n], title=titles[n], ncol=4, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=16)
+            plt.xlabel("step", fontsize=16)
+            plt.ylabel("forces error", fontsize=16)
+            plt.show()
+
+
+        return 
 
     # def get_xtb_energy(self, atoms=None):
 
