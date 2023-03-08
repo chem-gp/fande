@@ -282,7 +282,8 @@ class FandeDataModuleASE(LightningDataModule):
         
         self.soap_hypers = hypers
         
-        traj_train = self.traj_train       
+        traj_train = self.traj_train  
+        forces_train = self.forces_train     
 
         for f in traj_train:
             f.wrap(eps=1e-18)
@@ -290,61 +291,77 @@ class FandeDataModuleASE(LightningDataModule):
 
         n_atoms = len(traj_train[0])
 
+        frames_batches = self.prepare_batches(traj_train, forces_train, frames_per_batch=frames_per_batch)
 
 
         print(f"Total length of train traj is {len(traj_train)}")
-        
+        print(f"Total number of batches {len(frames_batches)}")       
         print("Calculating invariants on train trajectory with librascal...")
+
         soap_train = SphericalInvariants(**hypers)
-        managers_train = soap_train.transform(traj_train)
-        soap_array_train = managers_train.get_features(soap_train)
-        soap_grad_array_train = managers_train.get_features_gradient(soap_train)  
 
-        train_grad_info = managers_train.get_gradients_info()
-        # get the information necessary to the computation of gradients. 
-        # It has as many rows as dX_dr and each columns correspond to the 
-        # index of the structure, the central atom, the neighbor atom and their atomic species.
-        # get the derivatives of the representation w.r.t. the atomic positions
-        # DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
-        
-        #for now just subsampling the grad_array
-        if train_centers_positions is not None and train_derivatives_positions is not None:
-            print("Subsampling the gradients for selected positions...")
-            a = train_grad_info[:,1]
-            b = train_grad_info[:,2]
+        train_DX_np_batched = []
+        train_F_np_batched = []
 
-            if same_centers_derivatives:
-                train_indices_sub = np.where(
+        for batch in tqdm(frames_batches):
+            traj_train_b = batch['traj']
+            forces_train_b = batch['forces']
+
+            managers_train = soap_train.transform(traj_train_b)
+            soap_array_train = managers_train.get_features(soap_train)
+            soap_grad_array_train = managers_train.get_features_gradient(soap_train)  
+
+            train_grad_info = managers_train.get_gradients_info()
+            # get the information necessary to the computation of gradients. 
+            # It has as many rows as dX_dr and each columns correspond to the 
+            # index of the structure, the central atom, the neighbor atom and their atomic species.
+            # get the derivatives of the representation w.r.t. the atomic positions
+            # DX_train = soap_grad_array_train.reshape((grad_info_train.shape[0], 3, -1))
+            
+            #for now just subsampling the grad_array
+            if train_centers_positions is not None and train_derivatives_positions is not None:
+                print("Subsampling the gradients for selected positions...")
+                a = train_grad_info[:,1]
+                b = train_grad_info[:,2]
+
+                if same_centers_derivatives:
+                    train_indices_sub = np.where(
+                        np.in1d(a%n_atoms, train_centers_positions) & 
+                        np.in1d(b%n_atoms, train_derivatives_positions) &
+                        (a%n_atoms == b%n_atoms) )[0]
+                else:
+                    train_indices_sub = np.where(
                     np.in1d(a%n_atoms, train_centers_positions) & 
-                    np.in1d(b%n_atoms, train_derivatives_positions) &
-                    (a%n_atoms == b%n_atoms) )[0]
-            else:
-                train_indices_sub = np.where(
-                np.in1d(a%n_atoms, train_centers_positions) & 
-                np.in1d(b%n_atoms, train_derivatives_positions))[0]
-                    
-            forces_train_sub = np.zeros((train_grad_info[train_indices_sub].shape[0],3) )
-            train_grad_info_sub = train_grad_info[train_indices_sub]
+                    np.in1d(b%n_atoms, train_derivatives_positions))[0]
+                        
+                forces_train_sub = np.zeros((train_grad_info[train_indices_sub].shape[0],3) )
+                train_grad_info_sub = train_grad_info[train_indices_sub]
 
-            for ind, gi in enumerate(train_grad_info_sub):
-                forces_train_sub[ind] = self.forces_train[gi[0], gi[2]%n_atoms]
+                for ind, gi in enumerate(train_grad_info_sub):
+                    forces_train_sub[ind] = forces_train_b[gi[0], gi[2]%n_atoms]
 
-            forces_train_flat = forces_train_sub.flatten()
+                forces_train_flat = forces_train_sub.flatten()
 
-            train_indices_sub_3x = np.empty(( 3*train_indices_sub.size,), dtype=train_indices_sub.dtype)
-            train_indices_sub_3x[0::3] = 3*train_indices_sub
-            train_indices_sub_3x[1::3] = 3*train_indices_sub+1
-            train_indices_sub_3x[2::3] = 3*train_indices_sub+2
-            train_DX_np = soap_grad_array_train[train_indices_sub_3x]
+                train_indices_sub_3x = np.empty(( 3*train_indices_sub.size,), dtype=train_indices_sub.dtype)
+                train_indices_sub_3x[0::3] = 3*train_indices_sub
+                train_indices_sub_3x[1::3] = 3*train_indices_sub+1
+                train_indices_sub_3x[2::3] = 3*train_indices_sub+2
+                train_DX_np = soap_grad_array_train[train_indices_sub_3x]
+
+                train_DX_np_batched.append(train_DX_np)
+                train_F_np_batched.append(forces_train_flat)
 
 
-            self.train_DX = torch.tensor(train_DX_np, dtype=torch.float32)
-            self.train_F = torch.tensor(forces_train_flat, dtype=torch.float32)
+                del managers_train, soap_grad_array_train, train_DX_np
 
-        del soap_train, managers_train, soap_grad_array_train, train_DX_np
+        del soap_train
+
+        self.train_DX = torch.tensor(train_DX_np_batched, dtype=torch.float32)
+        self.train_F = torch.tensor(train_F_np_batched, dtype=torch.float32)
 
 
         traj_test = self.traj_test
+        forces_test = self.forces_test
         for f in traj_test:
             f.wrap(eps=1e-18)
 
@@ -377,7 +394,7 @@ class FandeDataModuleASE(LightningDataModule):
             test_grad_info_sub = test_grad_info[test_indices_sub]
 
             for ind, gi in enumerate(test_grad_info_sub):
-                forces_test_sub[ind] = self.forces_test[gi[0], gi[2]%n_atoms]
+                forces_test_sub[ind] = forces_test[gi[0], gi[2]%n_atoms]
 
             forces_test_flat = forces_test_sub.flatten()
 
@@ -407,7 +424,7 @@ class FandeDataModuleASE(LightningDataModule):
             frames_per_batch=10):
         
         n_frames = len(traj)
-        n_batches = int(n_frames/frames_per_batch)
+        n_batches = int(n_frames/frames_per_batch) + 1
 
         print(f"Total number of frames is {n_frames}")
         print(f"Total number of batches is {n_batches}")
