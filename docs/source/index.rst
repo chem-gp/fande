@@ -11,3 +11,4 @@ fande project
    :maxdepth: 2
 
    models.rst
+   data_modules.rst

@@ -41,5 +41,6 @@ fande/explore/__pycache__/
 
 
 _build
-# docs/
 fande_updated.tar.gz
+fande/plot/__pycache__/
+fande/plot/__pycache__/

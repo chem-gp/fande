@@ -201,12 +201,46 @@ class FandeDataModuleASE(LightningDataModule):
     # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
     def calculate_invariants_librascal(
             self, 
-            soap_params, 
+            soap_params: dict,
+            atomic_groups: list, 
             train_centers_positions=None, 
             train_derivatives_positions=None,
             test_centers_positions=None, 
             test_derivatives_positions=None,
-            same_centers_derivatives=False):
+            same_centers_derivatives=False,
+            frames_per_batch=10):
+        """
+        Calculate SOAP invariants using librascal
+
+        Parameters:
+        -----------
+        soap_params: dict
+            Dictionary containing the parameters for the SOAP descriptors
+        atomic_groups: list
+            List of atomic groups to train separate GP models for
+        train_centers_positions: list
+            List of positions of the atomic centers
+        train_derivatives_positions: list
+            List of indices of the atoms to calculate the derivatives with respect to. On these atoms the forces are evaluated.
+        test_centers_positions: list
+            List of positions of the atomic centers for the test dataset
+        test_derivatives_positions: list
+            List of indices of the atoms to calculate the derivatives with respect to for the test dataset. On these atoms the forces are evaluated.
+        same_centers_derivatives: bool
+            If True, the same atomic centers are used for the derivatives as for the descriptors.
+        
+        Returns:
+        --------
+        train_X: torch.tensor
+            Tensor containing the SOAP descriptors for the training set
+        train_DX: torch.tensor
+            Tensor containing the derivatives of the SOAP descriptors for the training set
+        test_X: torch.tensor
+            Tensor containing the SOAP descriptors for the test set
+        test_DX: torch.tensor
+            Tensor containing the derivatives of the SOAP descriptors for the test set
+
+        """
 
         species= soap_params['species']
         periodic= soap_params['periodic']
@@ -222,8 +256,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         hypers = dict(soap_type="PowerSpectrum",
                     interaction_cutoff=3.5,
-                    max_radial=6,
-                    max_angular=6,
+                    max_radial=3,
+                    max_angular=3,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -248,19 +282,17 @@ class FandeDataModuleASE(LightningDataModule):
         
         self.soap_hypers = hypers
         
-        traj_train = self.traj_train
-        traj_test = self.traj_test
+        traj_train = self.traj_train       
 
         for f in traj_train:
             f.wrap(eps=1e-18)
 
-        for f in traj_test:
-            f.wrap(eps=1e-18)
 
         n_atoms = len(traj_train[0])
 
+
+
         print(f"Total length of train traj is {len(traj_train)}")
-        print(f"Total length of test traj is {len(traj_test)}")
         
         print("Calculating invariants on train trajectory with librascal...")
         soap_train = SphericalInvariants(**hypers)
@@ -305,11 +337,18 @@ class FandeDataModuleASE(LightningDataModule):
             train_indices_sub_3x[2::3] = 3*train_indices_sub+2
             train_DX_np = soap_grad_array_train[train_indices_sub_3x]
 
-        if train_centers_positions is not None and train_derivatives_positions is not None:
+
             self.train_DX = torch.tensor(train_DX_np, dtype=torch.float32)
             self.train_F = torch.tensor(forces_train_flat, dtype=torch.float32)
 
         del soap_train, managers_train, soap_grad_array_train, train_DX_np
+
+
+        traj_test = self.traj_test
+        for f in traj_test:
+            f.wrap(eps=1e-18)
+
+        print(f"Total length of test traj is {len(traj_test)}")
 
         print("Calculating invariants on test trajectory with librascal...")
         soap_test = SphericalInvariants(**hypers)
@@ -348,9 +387,6 @@ class FandeDataModuleASE(LightningDataModule):
             test_indices_sub_3x[2::3] = 3*test_indices_sub+2
             test_DX_np = soap_grad_array_test[test_indices_sub_3x]
 
-
-
-        if test_centers_positions is not None and test_derivatives_positions is not None:
             self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
             self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
 
@@ -359,7 +395,32 @@ class FandeDataModuleASE(LightningDataModule):
 
 
         return train_grad_info_sub, test_grad_info_sub
+    
 
+    def split_training_data_into_groups(self, atomic_groups):
+        pass
+
+    def prepare_batches(
+            self, 
+            traj, 
+            forces, 
+            frames_per_batch=10):
+        
+        n_frames = len(traj)
+        n_batches = int(n_frames/frames_per_batch)
+
+        print(f"Total number of frames is {n_frames}")
+        print(f"Total number of batches is {n_batches}")
+
+        batches = []
+        for i in range(n_batches):
+            batch = {}
+            batch["traj"] = traj[i*frames_per_batch:(i+1)*frames_per_batch]
+            batch["forces"] = forces[i*frames_per_batch:(i+1)*frames_per_batch]
+            batches.append(batch)
+
+        return batches
+        
 
 
     def calculate_test_invariants_librascal(

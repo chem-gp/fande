@@ -16,7 +16,14 @@ autodoc_mock_imports = [
     "wandb", 
     "numpy",
     "ase",
-    "tqdm"
+    "tqdm",
+    "matplotlib",
+    "dscribe",
+    "plotly",
+    "torchmetrics",
+    "xtb",
+    "sparse",
+    "rascal",
     ]
 
 # Add any Sphinx extension module names here, as strings. They can be
