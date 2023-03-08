@@ -260,8 +260,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         hypers = dict(soap_type="PowerSpectrum",
                     interaction_cutoff=3.5,
-                    max_radial=6,
-                    max_angular=6,
+                    max_radial=3,
+                    max_angular=3,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
