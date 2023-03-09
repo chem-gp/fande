@@ -259,8 +259,8 @@ class FandeDataModuleASE(LightningDataModule):
 
         hypers = dict(soap_type="PowerSpectrum",
                     interaction_cutoff=3.5,
-                    max_radial=3,
-                    max_angular=3,
+                    max_radial=5,
+                    max_angular=5,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -370,8 +370,9 @@ class FandeDataModuleASE(LightningDataModule):
         DX_np_grouped = DX_np_batched.reshape(DX_np_batched.shape[0],DX_np_batched.shape[1]*DX_np_batched.shape[2],-1)
         F_np_batched = np.array(F_np_batched)
         F_np_grouped = F_np_batched.reshape(F_np_batched.shape[0],F_np_batched.shape[1]*F_np_batched.shape[2])
-        DX = torch.tensor(DX_np_grouped, dtype=torch.float32)
-        F = torch.tensor(F_np_grouped, dtype=torch.float32)
+        
+        DX = torch.tensor(DX_np_grouped, dtype=torch.float32).cuda()
+        F = torch.tensor(F_np_grouped, dtype=torch.float32).cuda()
 
         if train_or_test == "train":
             self.train_DX = DX
