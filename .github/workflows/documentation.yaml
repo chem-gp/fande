@@ -15,7 +15,7 @@ jobs:
       #     pip install gpytorch pytorch-lightning
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx_rtd_theme
+          pip install sphinx sphinx_rtd_theme rst2pdf
       - name: Sphinx build
         run: |
           sphinx-build docs/source _build
@@ -27,3 +27,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build/
           force_orphan: true
+      
+      - name: Generate pdf
+        run sphinx-build -b pdf docs/source _build
