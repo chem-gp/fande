@@ -12,7 +12,7 @@ from .my_kernels import CustomKernel
 
 from gpytorch.models import ExactGP
 
-from pytorch_lightning import LightningModule
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 import wandb
 
@@ -129,14 +129,18 @@ class ModelForces(LightningModule):
         Simple note.
     """
 
-    def __init__(self, train_x, train_y, hparams, learning_rate):
+    def __init__(
+            self, 
+            train_x=None, 
+            train_y=None,
+            atomic_group=None, 
+            hparams=None):
         """Initialize gp model with mean and covar."""
         super().__init__()
 
         # self.hparams = hparams
 
         self.hparams.update(hparams)
-        self.learning_rate = learning_rate
         # self.save_hyperparameters()
         #add prior for badly conditioned datasets
         # this prior can affect predictions badly
@@ -148,6 +152,16 @@ class ModelForces(LightningModule):
         self.model = ExactGPModelForces(train_x, train_y, self.likelihood)       
         self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
             self.likelihood, self.model)
+        
+        self.atomic_group = atomic_group
+
+        ## Store the training parameters inside the model:
+        self.train_x = train_x
+        self.train_y = train_y
+
+        self.num_epochs = 10
+        self.learning_rate = 0.01
+        self.precision = 32 
 
         # SVGP Approximate GP model with Variational ELBO as loss function
         # self.inducing_points = train_x[0:2:2000, :]
@@ -222,8 +236,70 @@ class ModelForces(LightningModule):
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
         """wrapper around lightning function"""
         return self(batch[0])
+    
+    def predict_forces(self,input_):
+        """
+        Just prediction step with additional reshape taking into account the atomic group
+
+        Returns:
+            reshaped prediction
+        """
+        return self(input_).mean.reshape(-1, len(self.atomic_group), 3)
 
 
+
+
+## class that includes the collection of ModelForces models
+
+class GroupModelForces(LightningModule):
+    """
+    Class that includes the collection of ModelForces models.
+    """
+
+    def __init__(
+            self,
+            models: list,
+            training_data: list, # dataloader object per each model
+            hparams=None,
+                 ) -> None:
+        super().__init__()
+
+        self.models = models
+        self.training_data = training_data
+
+        self.trainers = []
+
+        for idx, model in enumerate(self.models):
+            trainer = Trainer(gpus=1, max_epochs=model.num_epochs, precision=model.precision)
+            self.trainers.append(trainer)
+
+        self.hparams.update(hparams)
+
+
+    def forward(self, x):
+        """Compute prediction."""
+
+        res = []
+        for model in self.models:
+            res.append(model(x))
+
+        return res
+    
+    def fit(self):
+        """
+        Train all force models associated with atomic groups.
+        """
+        for idx, model in enumerate(self.models):
+            print(f"Training force model {idx} of {len(self.models)}")
+            self.trainers[idx].fit(model, self.training_data[idx])
+
+    def eval(self):
+
+        for model in self.models:
+            model.eval()
+
+        return
+    
 
 
 

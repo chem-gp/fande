@@ -128,82 +128,6 @@ class FandeDataModuleASE(LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch_size)
 
 
-    def calculate_invariants_dscribe(self, soap_params):
-
-        species= soap_params['species']
-        periodic= soap_params['periodic']
-        rcut= soap_params['rcut']
-        sigma= soap_params['sigma']
-        nmax= soap_params['nmax']
-        lmax= soap_params['lmax']
-        average= soap_params['average']
-        crossover= soap_params['crossover']
-        dtype= soap_params['dtype']
-        sparse= soap_params['sparse']
-        positions = soap_params['positions']
-
-        soap = SOAP(
-            species=species,
-            periodic=periodic,
-            rcut=rcut,
-            sigma=sigma,
-            nmax=nmax,
-            lmax=lmax,
-            average=average,
-            crossover=crossover,
-            dtype=dtype,
-            sparse=sparse  
-        )
-
-        traj_train = self.traj_train
-        traj_test = self.traj_test
-
-        print(f"Total length of train traj is {len(traj_train)}")
-        print("Starting SOAP calculation...")
-        derivatives_train, descriptors_train = soap.derivatives(
-            traj_train,
-            positions=[positions] * len(traj_train),
-            n_jobs=10,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-        derivatives_train = derivatives_train.squeeze()
-        descriptors_train = descriptors_train.squeeze()
-
-        print(f"Total length of test traj is {len(traj_test)}")
-        print("Starting SOAP calculation...")
-        derivatives_test, descriptors_test = soap.derivatives(
-            traj_test,
-            positions=[positions] * len(traj_test),
-            n_jobs=10,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-        derivatives_test = derivatives_test.squeeze()
-        descriptors_test = descriptors_test.squeeze()
-
-
-        self.train_X = torch.tensor(descriptors_train)      
-        self.train_DX = torch.tensor(
-                derivatives_train.transpose(2,1,0,3).reshape(
-            derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
-        ))
-
-        self.test_X = torch.tensor(descriptors_test)      
-        self.test_DX = torch.tensor(
-                derivatives_test.transpose(2,1,0,3).reshape(
-            derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
-        ))
-
-        print(derivatives_train.shape)
-        print(descriptors_train.shape)
-
-        # train_X = train_X.to(torch.float32)
-        # train_Y = train_Y.to(torch.float32)
-        # test_X = test_X.to(torch.float32)
-        # test_Y = test_Y.to(torch.float32)
-
-
     # https://github.com/lab-cosmo/librascal/blob/4e576ae7b9d3740715ab1910def5e1a15ffd1268/tests/python/python_representation_calculator_test.py
     # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
     def calculate_invariants_librascal(
@@ -224,30 +148,23 @@ class FandeDataModuleASE(LightningDataModule):
             Dictionary containing the parameters for the SOAP descriptors
         atomic_groups: list
             List of atomic groups to train separate GP models for
-        train_centers_positions: list
+        centers_positions: list
             List of positions of the atomic centers
-        train_derivatives_positions: list
+        derivatives_positions: list
             List of indices of the atoms to calculate the derivatives with respect to. On these atoms the forces are evaluated.
-        test_centers_positions: list
-            List of positions of the atomic centers for the test dataset
-        test_derivatives_positions: list
-            List of indices of the atoms to calculate the derivatives with respect to for the test dataset. On these atoms the forces are evaluated.
         same_centers_derivatives: bool
             If True, the same atomic centers are used for the derivatives as for the descriptors.
         frames_per_batch: int
             Number of frames per batch when calculating invariants. Extremely useful when memory is limited.
+        train_or_test: str
+            Whether to calculate the invariants for the training or test set of frames (`self.traj_train` or `self.traj_test`).
         
         Returns:
         --------
-        train_X: torch.tensor
-            Tensor containing the SOAP descriptors for the training set
-        train_DX: torch.tensor
-            Tensor containing the derivatives of the SOAP descriptors for the training set
-        test_X: torch.tensor
-            Tensor containing the SOAP descriptors for the test set
-        test_DX: torch.tensor
-            Tensor containing the derivatives of the SOAP descriptors for the test set
-
+        X: torch.tensor
+            Tensor containing the SOAP descriptors for the set of frames split by atomic groups specified in `atomic_groups`.
+        DX: torch.tensor
+            Tensor containing the derivatives of the SOAP descriptors for the set of frames split by atomic groups specified in `atomic_groups`.
         """
 
         species= soap_params['species']
@@ -263,9 +180,9 @@ class FandeDataModuleASE(LightningDataModule):
         positions = soap_params['positions']
 
         hypers = dict(soap_type="PowerSpectrum",
-                    interaction_cutoff=3.5,
-                    max_radial=5,
-                    max_angular=5,
+                    interaction_cutoff=rcut,
+                    max_radial=nmax,
+                    max_angular=lmax,
                     gaussian_sigma_constant=0.5,
                     gaussian_sigma_type="Constant",
                     cutoff_function_type="RadialScaling",
@@ -308,20 +225,19 @@ class FandeDataModuleASE(LightningDataModule):
 
         frames_batches = self.prepare_batches(traj, forces, frames_per_batch=frames_per_batch)
 
-
-        print(f"Total length of train traj is {len(traj)}")
+        print(f"Total length of traj is {len(traj)}")
         print(f"Total number of batches {len(frames_batches)}")       
-        print("Calculating invariants on train trajectory with librascal...")
+        print("Calculating invariants on trajectory with librascal...")
    
         DX_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]  
         F_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
         grad_info_sub_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
 
-        for ind_b, batch in tqdm(enumerate(frames_batches)):
+        for ind_b, batch in enumerate(tqdm(frames_batches)):
             traj_b = batch['traj']
             forces_b = batch['forces']
 
-            print("Batch loaded... Computing SOAP invariants...")
+            # print("Batch loaded... Computing SOAP invariants...")
             soap = SphericalInvariants(**hypers)
             managers = soap.transform(traj_b)
             soap_array = managers.get_features(soap)
@@ -336,10 +252,9 @@ class FandeDataModuleASE(LightningDataModule):
 
             #for now just subsampling the grad_array: this part is probably much cheaper to evaluate calculation of invariants
             if centers_positions is not None and derivatives_positions is not None:
-                print("Subsampling the gradients for selected positions...")
+                # print("Subsampling the gradients for selected positions...")
                 a = grad_info[:,1]
                 b = grad_info[:,2]
-
                 for ind_ag, ag in enumerate(atomic_groups):
                     indices_sub = np.where(
                         np.in1d(a%n_atoms, centers_positions) & 
@@ -694,4 +609,77 @@ class FandeDataModuleASE(LightningDataModule):
              
         return
 
+    def calculate_invariants_dscribe(self, soap_params):
 
+        species= soap_params['species']
+        periodic= soap_params['periodic']
+        rcut= soap_params['rcut']
+        sigma= soap_params['sigma']
+        nmax= soap_params['nmax']
+        lmax= soap_params['lmax']
+        average= soap_params['average']
+        crossover= soap_params['crossover']
+        dtype= soap_params['dtype']
+        sparse= soap_params['sparse']
+        positions = soap_params['positions']
+
+        soap = SOAP(
+            species=species,
+            periodic=periodic,
+            rcut=rcut,
+            sigma=sigma,
+            nmax=nmax,
+            lmax=lmax,
+            average=average,
+            crossover=crossover,
+            dtype=dtype,
+            sparse=sparse  
+        )
+
+        traj_train = self.traj_train
+        traj_test = self.traj_test
+
+        print(f"Total length of train traj is {len(traj_train)}")
+        print("Starting SOAP calculation...")
+        derivatives_train, descriptors_train = soap.derivatives(
+            traj_train,
+            positions=[positions] * len(traj_train),
+            n_jobs=10,
+            # method="analytical"
+        )
+        print("SOAP calculation done!")
+        derivatives_train = derivatives_train.squeeze()
+        descriptors_train = descriptors_train.squeeze()
+
+        print(f"Total length of test traj is {len(traj_test)}")
+        print("Starting SOAP calculation...")
+        derivatives_test, descriptors_test = soap.derivatives(
+            traj_test,
+            positions=[positions] * len(traj_test),
+            n_jobs=10,
+            # method="analytical"
+        )
+        print("SOAP calculation done!")
+        derivatives_test = derivatives_test.squeeze()
+        descriptors_test = descriptors_test.squeeze()
+
+
+        self.train_X = torch.tensor(descriptors_train)      
+        self.train_DX = torch.tensor(
+                derivatives_train.transpose(2,1,0,3).reshape(
+            derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
+        ))
+
+        self.test_X = torch.tensor(descriptors_test)      
+        self.test_DX = torch.tensor(
+                derivatives_test.transpose(2,1,0,3).reshape(
+            derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
+        ))
+
+        print(derivatives_train.shape)
+        print(descriptors_train.shape)
+
+        # train_X = train_X.to(torch.float32)
+        # train_Y = train_Y.to(torch.float32)
+        # test_X = test_X.to(torch.float32)
+        # test_Y = test_Y.to(torch.float32)

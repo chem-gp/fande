@@ -128,9 +128,10 @@ class PredictorASE:
         self,
         fdm,
         model_e,
-        model_f,
         trainer_e,
-        trainer_f,
+        atomic_group_force_model,
+        # model_f,
+        # trainer_f,
         hparams,
         soap_params
     ):
@@ -140,11 +141,12 @@ class PredictorASE:
         self.soap_params = soap_params
 
         self.model_e = model_e
-        self.model_f = model_f
+        self.model_f = atomic_group_force_model.models[0]
+
+        self.ag_force_model = atomic_group_force_model
 
         self.trainer_e = trainer_e
-        self.trainer_f = trainer_f
-
+        self.trainer_f = atomic_group_force_model.trainers[0]
 
 
         self.test_X = fdm.test_X
@@ -154,7 +156,7 @@ class PredictorASE:
 
         self.test_traj = fdm.traj_test
 
-        self.n_molecules = fdm.test_E.shape[0]
+        # self.n_molecules = fdm.test_E.shape[0]
 
         self.n_atoms = 1
 
@@ -163,6 +165,8 @@ class PredictorASE:
         self.xtb_calc = XTB(method="GFN2-xTB")
 
     def predict_and_plot_energies(self):
+
+        raise NotImplementedError
 
         # print(self.n_molecules, self.n_atoms)
         test_x_e, test_y_e = get_vectors_e(
@@ -589,9 +593,14 @@ class PredictorASE:
 
     def test_errors(self, plot=False, view_worst_atoms=False):
         ## predictor maximal error with respect to fdm.test_DX and fdm.test_F
+        
+        # try to make it work with the self.ag_force_model
 
         test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
         test_dl = DataLoader(test, batch_size=self.batch_size)
+
+        trainer_f = self.ag_force_model.trainers[0]
+        model_f = self.ag_force_model.models[0]
 
         res = self.trainer_f.predict(self.model_f, test_dl)[0]
 

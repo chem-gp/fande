@@ -2,7 +2,7 @@
 Docs for fande models.
 """
 
-from .forces import ModelForces
+from .forces import ModelForces, GroupModelForces
 
 from .energies import ModelEnergies
 
