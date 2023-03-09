@@ -51,13 +51,6 @@ class FandeDataModuleASE(LightningDataModule):
         self.energies_test = test_data['energies']
         self.forces_test = test_data['forces']
 
-        if units=='hartree_bohr':
-            print('Converting from Hartree to eV, Hartree/Bohr to eV/Angstrom')
-            self.energies_train = self.energies_train * Hartree
-            self.energies_test = self.energies_test * Hartree
-            self.forces_train = self.forces_train * Hartree / Bohr
-            self.forces_test = self.forces_test * Hartree / Bohr
-
         self.train_DX = None
         self.train_F = None
         self.test_DX = None
@@ -68,36 +61,48 @@ class FandeDataModuleASE(LightningDataModule):
         self.test_X = None
         self.test_E = None
 
-        self.normalizing_factor = np.max(self.energies_train) - np.min(self.energies_train)
-
-        forces_train_norm = self.forces_train / self.normalizing_factor
-        energies_train_norm = (self.energies_train - np.min(self.energies_train)) / self.normalizing_factor
-
-        forces_test_norm = self.forces_test / self.normalizing_factor
-        energies_test_norm = (self.energies_test - np.min(self.energies_train)) / self.normalizing_factor
-
-        self.forces_train_norm = forces_train_norm
-        self.forces_test_norm = forces_test_norm
-
-        forces_train_norm = forces_train_norm.transpose(2,1,0).reshape(
-            forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
-            ).astype(np.float64)
-
-        forces_test_norm = forces_test_norm.transpose(2,1,0).reshape(
-            forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
-            ).astype(np.float64)
-
-
-        self.train_E = torch.tensor( energies_train_norm )
-        self.test_E = torch.tensor( energies_test_norm )
-        self.train_F = torch.tensor( forces_train_norm )
-        self.test_F = torch.tensor( forces_test_norm )
-
-
-        self.train_F = self.train_F[:, :].squeeze()
-        self.test_F = self.test_F[:, :].squeeze()
+        self.atomic_groups = None
 
         self.batch_size = 1_000_000
+
+        # if units=='hartree_bohr':
+        #     print('Converting from Hartree to eV, Hartree/Bohr to eV/Angstrom')
+        #     self.energies_train = self.energies_train * Hartree
+        #     self.energies_test = self.energies_test * Hartree
+        #     self.forces_train = self.forces_train * Hartree / Bohr
+        #     self.forces_test = self.forces_test * Hartree / Bohr
+
+
+        # self.normalizing_factor = np.max(self.energies_train) - np.min(self.energies_train)
+
+        # forces_train_norm = self.forces_train / self.normalizing_factor
+        # energies_train_norm = (self.energies_train - np.min(self.energies_train)) / self.normalizing_factor
+
+        # forces_test_norm = self.forces_test / self.normalizing_factor
+        # energies_test_norm = (self.energies_test - np.min(self.energies_train)) / self.normalizing_factor
+
+        # self.forces_train_norm = forces_train_norm
+        # self.forces_test_norm = forces_test_norm
+
+        # forces_train_norm = forces_train_norm.transpose(2,1,0).reshape(
+        #     forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
+        #     ).astype(np.float64)
+
+        # forces_test_norm = forces_test_norm.transpose(2,1,0).reshape(
+        #     forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
+        #     ).astype(np.float64)
+
+
+        # self.train_E = torch.tensor( energies_train_norm )
+        # self.test_E = torch.tensor( energies_test_norm )
+        # self.train_F = torch.tensor( forces_train_norm )
+        # self.test_F = torch.tensor( forces_test_norm )
+
+
+        # self.train_F = self.train_F[:, :].squeeze()
+        # self.test_F = self.test_F[:, :].squeeze()
+
+
 
 
 
