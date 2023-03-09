@@ -26,7 +26,6 @@ jobs:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build/
-          force_orphan: true
-      
+          force_orphan: true      
       - name: Generate pdf
         run sphinx-build -b pdf docs/source _build
