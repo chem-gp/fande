@@ -596,18 +596,24 @@ class PredictorASE:
         
         # try to make it work with the self.ag_force_model
 
-        test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
-        test_dl = DataLoader(test, batch_size=self.batch_size)
+        for idx, model in enumerate(self.ag_force_model.models):       
 
-        trainer_f = self.ag_force_model.trainers[0]
-        model_f = self.ag_force_model.models[0]
+            test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
+            test_dl = DataLoader(test, batch_size=self.batch_size)
 
-        res = self.trainer_f.predict(self.model_f, test_dl)[0]
+            trainer_f = self.ag_force_model.trainers[0]
+            model_f = self.ag_force_model.models[0]
 
-        predictions_torch = res.mean
+            res = self.trainer_f.predict(self.model_f, test_dl)[0]
 
-        predictions_errors = predictions_torch.detach().cpu() - self.fdm.test_F.detach().cpu()
-        predictions_errors = predictions_errors.numpy()
+            predictions_torch = res.mean     
+
+            predictions_errors = predictions_torch.detach().cpu() - self.fdm.test_F.detach().cpu()
+            predictions_errors = predictions_errors.numpy()
+
+        print(predictions_errors.shape)
+
+        return
 
         if plot:
             plt.plot(predictions_errors)
