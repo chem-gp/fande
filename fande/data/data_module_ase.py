@@ -36,6 +36,8 @@ from functools import lru_cache
 
 import math
 
+from fande import logger
+
 
 
 class FandeDataModuleASE(LightningDataModule):
@@ -226,17 +228,24 @@ class FandeDataModuleASE(LightningDataModule):
         else:
             hypers = self.soap_hypers
 
-        
+        logger.info("Setting context for descriptors calculation to {}".format(calculation_context))
+
         if calculation_context == "train":
             traj = self.traj_train
             forces = self.forces_train
             self.atomic_groups = atomic_groups
+            self.centers_positions = centers_positions
+            self.derivatives_positions = derivatives_positions
         elif calculation_context == "test":
             traj = self.traj_test
             forces = self.forces_test
-        elif trajectory is not None:
+
+        if trajectory is not None and calculation_context == "production":
             traj = trajectory
             forces = np.zeros((len(traj), len(traj[0]), 3))
+            atomic_groups = self.atomic_groups
+            centers_positions = self.centers_positions
+            # print(atomic_groups)
             # raise NotImplementedError("Not implemented yet for trajectory input")
    
         for f in traj:
@@ -250,15 +259,13 @@ class FandeDataModuleASE(LightningDataModule):
         if atomic_groups == 'all':
             atomic_groups = [list(range(n_atoms))]
 
-        if calculation_context == "production":
-            atomic_groups = self.atomic_groups
-        
+       
         n_atomic_groups = len(atomic_groups)
 
 
         frames_batches = self.prepare_batches(traj, forces, frames_per_batch=frames_per_batch)
 
-
+        
 
         print(f"Total length of traj is {len(traj)}")
         print(f"Total number of batches {len(frames_batches)}")       
@@ -286,35 +293,41 @@ class FandeDataModuleASE(LightningDataModule):
             # print("rascal calculations done...")
 
             #for now just subsampling the grad_array: this part is probably much cheaper to evaluate calculation of invariants
-            if centers_positions is not None and derivatives_positions is not None:
+            # if centers_positions is not None and derivatives_positions is not None:
                 # print("Subsampling the gradients for selected positions...")
-                a = grad_info[:,1]
-                b = grad_info[:,2]
-                for ind_ag, ag in enumerate(atomic_groups):
-                    indices_sub = np.where(
-                        np.in1d(a%n_atoms, centers_positions) & 
-                        np.in1d(b%n_atoms, derivatives_positions) &
-                        (a%n_atoms == b%n_atoms) &
-                        np.in1d(a%n_atoms, ag) )[0]
-                    
-                    forces_sub = np.zeros((grad_info[indices_sub].shape[0],3) )
-                    grad_info_sub = grad_info[indices_sub]
+            a = grad_info[:,1]
+            b = grad_info[:,2]
+            for ind_ag, ag in enumerate(atomic_groups):
+                indices_sub = np.where(
+                    np.in1d(a%n_atoms, centers_positions) & 
+                    np.in1d(b%n_atoms, derivatives_positions) &
+                    (a%n_atoms == b%n_atoms) &
+                    np.in1d(a%n_atoms, ag) )[0]
+                
+                # print(a%n_atoms == b%n_atoms)
+                # return
 
-                    for ind, gi in enumerate(grad_info_sub):
-                        forces_sub[ind] = forces_b[gi[0], gi[2]%n_atoms]
+                forces_sub = np.zeros((grad_info[indices_sub].shape[0],3) )
+                grad_info_sub = grad_info[indices_sub]
 
-                    forces_train_flat = forces_sub.flatten()
+                for ind, gi in enumerate(grad_info_sub):
+                    forces_sub[ind] = forces_b[gi[0], gi[2]%n_atoms]
 
-                    indices_sub_3x = np.empty(( 3*indices_sub.size,), dtype=indices_sub.dtype)
-                    indices_sub_3x[0::3] = 3*indices_sub
-                    indices_sub_3x[1::3] = 3*indices_sub+1
-                    indices_sub_3x[2::3] = 3*indices_sub+2
-                    DX_np = soap_grad_array[indices_sub_3x]
+                forces_train_flat = forces_sub.flatten()
 
-                    DX_np_batched[ind_ag].append(DX_np)
-                    F_np_batched[ind_ag].append(forces_train_flat)
-                    grad_info_sub_batched[ind_ag].append(grad_info_sub)
+                indices_sub_3x = np.empty(( 3*indices_sub.size,), dtype=indices_sub.dtype)
+                indices_sub_3x[0::3] = 3*indices_sub
+                indices_sub_3x[1::3] = 3*indices_sub+1
+                indices_sub_3x[2::3] = 3*indices_sub+2
+                DX_np = soap_grad_array[indices_sub_3x]
 
+                DX_np_batched[ind_ag].append(DX_np)
+                F_np_batched[ind_ag].append(forces_train_flat)
+                grad_info_sub_batched[ind_ag].append(grad_info_sub)
+
+                # print(a)
+                # print("positions ", centers_positions, derivatives_positions)
+                # print()
 
                 
                 if not same_centers_derivatives:
@@ -457,7 +470,7 @@ class FandeDataModuleASE(LightningDataModule):
 
         # raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
 
-        traj = [snapshot]
+        traj = [snapshot, snapshot]
 
         # for f in traj_test:
         #     f.wrap(eps=1e-18)
@@ -490,12 +503,15 @@ class FandeDataModuleASE(LightningDataModule):
         # del soap_test, managers_test, soap_grad_array_test, test_DX_np
 
 
-        self.snap_DX, F = self.calculate_invariants_librascal(traj, same_centers_derivatives=same_centers_derivatives, calculation_context="production")
+        snap_DX, F = self.calculate_invariants_librascal(
+            trajectory=traj, 
+            same_centers_derivatives=same_centers_derivatives, 
+            calculation_context="production")
 
-        print(self.snap_DX)
+        print(snap_DX)
 
 
-        return 
+        return snap_DX
 
 
 

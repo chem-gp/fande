@@ -561,9 +561,11 @@ class PredictorASE:
 
             n_atoms = len(snapshot)
 
-            self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+            snap_DX = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
 
-            snap_DX = self.fdm.snap_DX
+            # snap_DX = self.fdm.snap_DX
+
+            print(snap_DX)
 
 
             snap_DX = torch.tensor(snap_DX, dtype = torch.float32 )
