@@ -23,6 +23,8 @@ from torch.optim import Adam
 
 import numpy as np
 
+from fande import logger
+
 
 
 from gpytorch.models import ApproximateGP
@@ -301,6 +303,7 @@ class GroupModelForces(LightningModule):
         Train all force models associated with atomic groups. Now it is done sequentially.
         """
 
+        logger.info("Training force models")
 
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} of {len(self.models)}")

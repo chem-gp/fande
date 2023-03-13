@@ -25,6 +25,8 @@ from xtb.ase.calculator import XTB
 
 from ase.visualize import view
 
+from fande import logger
+
 
 class SimplePredictorASE:
     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
@@ -614,7 +616,8 @@ class PredictorASE:
             Dictionary containing the errors metrics 
 
         """
-        ## predictor maximal error with respect to fdm.test_DX and fdm.test_F
+
+        logger.info("Calculating errors...")
         
         # try to make it work with the self.ag_force_model
         predictions_errors = []

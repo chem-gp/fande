@@ -2,8 +2,14 @@ import fande.models
 
 import logging
 
-logging.basicConfig(filename='fande.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-logging.warning('Fande module imported')
+logging.basicConfig(filename='FANDE.LOG', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+logger.info('Fande module imported')
+
+
 
 
 __version__ = "0.0.0"
