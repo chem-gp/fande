@@ -1,3 +1,9 @@
+"""
+Predictors objects aim to handle the prediction of energies and forces, evaluate test metrics, make plots, etc.
+As an input object it takes the models forces and energies and the data module.
+"""
+
+
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 
@@ -592,9 +598,26 @@ class PredictorASE:
 
 
     def test_errors(self, plot=False, view_worst_atoms=False):
+        """
+        Provides test errors metrics for the models.
+
+        Parameters
+        ----------
+        plot : bool, optional
+            If True, plots the errors, by default False
+        view_worst_atoms : bool, optional
+            If True, provides the indices of the worst atoms, by default False
+
+        Returns
+        -------
+        dict
+            Dictionary containing the errors metrics 
+
+        """
         ## predictor maximal error with respect to fdm.test_DX and fdm.test_F
         
         # try to make it work with the self.ag_force_model
+        predictions_errors = []
 
         for idx, model in enumerate(self.ag_force_model.models):       
 
@@ -604,70 +627,75 @@ class PredictorASE:
             trainer_f = self.ag_force_model.trainers[0]
             model_f = self.ag_force_model.models[0]
 
-            res = self.trainer_f.predict(self.model_f, test_dl)[0]
+            res = trainer_f.predict(self.model_f, test_dl)[0]
 
-            predictions_torch = res.mean     
+            predictions_torch = res.mean
 
-            predictions_errors = predictions_torch.detach().cpu() - self.fdm.test_F.detach().cpu()
-            predictions_errors = predictions_errors.numpy()
+            # print(predictions_torch)     
+            # print()
 
-        print(predictions_errors.shape)
+            predictions_errors_idx = predictions_torch.detach().cpu() - self.fdm.test_F[idx].detach().cpu()
+            predictions_errors_idx = predictions_errors_idx.numpy()
+            predictions_errors.append(predictions_errors_idx)
 
-        return
 
-        if plot:
-            plt.plot(predictions_errors)
+        for idx, pred in enumerate(predictions_errors):
+            plt.plot( pred, label="Atomic group " + str(idx) )
+            plt.legend()
             plt.show()
 
-            plt.hist(predictions_errors, bins=30)
+            plt.hist(pred, bins=30, label="Atomic group " + str(idx))
+            plt.legend()
             plt.show()
 
-
-        print("MSE: ", np.mean(predictions_errors**2) )
-        print("MAE: ", np.mean( abs(predictions_errors)) )
-        print("Max error: ", max(abs(predictions_errors)))
-
-
-        print("Analyzing where predictions are the worst...")          
-        def k_largest_index_argsort(a, k):
-            # Helper function to find indices for k largest values
-            idx = np.argsort(a.ravel())[:-k-1:-1]
-            return np.column_stack(np.unravel_index(idx, a.shape))
-
-        n_test_snaps = 20
-        n_atoms = 264
-
-        abs_errors = abs(predictions_errors).reshape(n_test_snaps, n_atoms,-1)
-
-        worst_indices = k_largest_index_argsort(abs_errors, 20)
-        worst_atoms = worst_indices[:,1]
-        worst_snapshots = worst_indices[:,1]
-
-        print("Atomic indices with worst predictions:", worst_atoms)
-
-        if view_worst_atoms:
-            view( [ self.fdm.traj_test[0][worst_atoms], self.fdm.traj_test[0] ]  ) #+ self.fdm.traj_test[0])
-
-            # make plot of worst errors (debug needed)
-            errors_list = [abs_errors[tuple(i)] for i in worst_indices]
-            xs = np.arange(len(errors_list))
-            ys = errors_list
-            plt.plot(xs, ys, marker='x', linestyle='None')
-            ind=0
-            for x,y in zip(xs,ys):
-
-                label = "{:.2f}".format(y)
-
-                plt.annotate(worst_indices[ind], # this is the text
-                            (x,y), # these are the coordinates to position the label
-                            textcoords="offset points", # how to position the text
-                            xytext=(0,10), # distance from text to points (x,y)
-                            ha='center') # horizontal alignment can be left, right or center
-                ind=ind+1
-            plt.show()
+            print("Erorr metrics for atomic group ", idx)
+            print("MSE: ", np.mean(pred**2) )
+            print("MAE: ", np.mean( abs(pred)) )
+            print("Max error: ", max(abs(pred)))
 
 
-        return abs_errors, worst_indices
+        print("Analyzing where predictions are the worst...")
+        Warning("This part is not working yet")
+       
+        # def k_largest_index_argsort(a, k):
+        #     # Helper function to find indices for k largest values
+        #     idx = np.argsort(a.ravel())[:-k-1:-1]
+        #     return np.column_stack(np.unravel_index(idx, a.shape))
+
+        # n_test_snaps = 20
+        # n_atoms = 264
+
+        # abs_errors = abs(predictions_errors).reshape(n_test_snaps, n_atoms,-1)
+
+        # worst_indices = k_largest_index_argsort(abs_errors, 20)
+        # worst_atoms = worst_indices[:,1]
+        # worst_snapshots = worst_indices[:,1]
+
+        # print("Atomic indices with worst predictions:", worst_atoms)
+
+        # if view_worst_atoms:
+        #     view( [ self.fdm.traj_test[0][worst_atoms], self.fdm.traj_test[0] ]  ) #+ self.fdm.traj_test[0])
+
+        #     # make plot of worst errors (debug needed)
+        #     errors_list = [abs_errors[tuple(i)] for i in worst_indices]
+        #     xs = np.arange(len(errors_list))
+        #     ys = errors_list
+        #     plt.plot(xs, ys, marker='x', linestyle='None')
+        #     ind=0
+        #     for x,y in zip(xs,ys):
+
+        #         label = "{:.2f}".format(y)
+
+        #         plt.annotate(worst_indices[ind], # this is the text
+        #                     (x,y), # these are the coordinates to position the label
+        #                     textcoords="offset points", # how to position the text
+        #                     xytext=(0,10), # distance from text to points (x,y)
+        #                     ha='center') # horizontal alignment can be left, right or center
+        #         ind=ind+1
+        #     plt.show()
+
+
+        # return abs_errors, worst_indices
 
 
     def predict_energy_single(self,snapshot):

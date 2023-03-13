@@ -264,19 +264,20 @@ class GroupModelForces(LightningModule):
     def __init__(
             self,
             models: list,
-            fdm, # specification of fdm is needed!
+            train_data_loaders: list,
+            fdm=None, # specification of fdm is optional
             hparams=None,
                  ) -> None:
         super().__init__()
 
         self.models = models
-        self.training_data = training_data
+        self.train_data_loaders = train_data_loaders
 
         self.trainers = []
         self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
-            trainer = Trainer(gpus=1, max_epochs=model.num_epochs, precision=model.precision)
+            trainer = Trainer(gpus=1, max_epochs=self.per_model_hparams[idx]['num_epochs'], precision=32)
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
@@ -303,7 +304,7 @@ class GroupModelForces(LightningModule):
 
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} of {len(self.models)}")
-            self.trainers[idx].fit(model, train_data_loaders[idx])
+            self.trainers[idx].fit(model, self.train_data_loaders[idx])
 
 
 
