@@ -14,9 +14,14 @@ from gpytorch.models import ExactGP
 
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 
+from torch.utils.data import DataLoader, TensorDataset, random_split
+
 import wandb
 
 from torch.optim import Adam
+
+
+import numpy as np
 
 
 
@@ -259,7 +264,7 @@ class GroupModelForces(LightningModule):
     def __init__(
             self,
             models: list,
-            training_data: list, # dataloader object per each model
+            fdm, # specification of fdm is needed!
             hparams=None,
                  ) -> None:
         super().__init__()
@@ -268,12 +273,17 @@ class GroupModelForces(LightningModule):
         self.training_data = training_data
 
         self.trainers = []
+        self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
             trainer = Trainer(gpus=1, max_epochs=model.num_epochs, precision=model.precision)
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
+
+        self.fdm = fdm
+
+
 
 
     def forward(self, x):
@@ -287,11 +297,15 @@ class GroupModelForces(LightningModule):
     
     def fit(self):
         """
-        Train all force models associated with atomic groups.
+        Train all force models associated with atomic groups. Now it is done sequentially.
         """
+
+
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} of {len(self.models)}")
-            self.trainers[idx].fit(model, self.training_data[idx])
+            self.trainers[idx].fit(model, train_data_loaders[idx])
+
+
 
     def eval(self):
 

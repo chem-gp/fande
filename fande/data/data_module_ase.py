@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Optional
 from pytorch_lightning import LightningDataModule
 
+from torch.utils.data import DataLoader, TensorDataset, random_split
+
 import torch
 import numpy as np
 
@@ -139,10 +141,10 @@ class FandeDataModuleASE(LightningDataModule):
             derivatives_positions=None,
             same_centers_derivatives=False,
             frames_per_batch=10,
-            train_or_test="train",
+            calculation_context=None, # train/test/production contexts
             trajectory=None): 
         """
-        Calculate SOAP invariants using librascal
+        Calculate SOAP invariants using librascal. If `trajectory` is not specified, the invariants are calculated for the training or test set of frames (`self.traj_train` or `self.traj_test`).
 
         Parameters:
         -----------
@@ -158,8 +160,8 @@ class FandeDataModuleASE(LightningDataModule):
             If True, the same atomic centers are used for the derivatives as for the descriptors.
         frames_per_batch: int
             Number of frames per batch when calculating invariants. Extremely useful when memory is limited.
-        train_or_test: str
-            Whether to calculate the invariants for the training or test set of frames (`self.traj_train` or `self.traj_test`).
+        calculation_context: str, ['train', 'test', 'production']
+            Whether to calculate the invariants for the training/test set of frames (stored within`self.traj_train` or `self.traj_test`) or for on-the-fly md runs.
         
         Returns:
         --------
@@ -167,7 +169,15 @@ class FandeDataModuleASE(LightningDataModule):
             Tensor containing the SOAP descriptors for the set of frames split by atomic groups specified in `atomic_groups`.
         DX: list(torch.tensor)
             list of torch tensors containing the derivatives of the SOAP descriptors for each atomic group specified in `atomic_groups`.
+        
+        only for calculation_context='production':
+        F: torch.tensor
+            Tensor containing the forces for the set of frames split by atomic groups specified in `atomic_groups`.
         """
+
+        if calculation_context is None:
+            raise ValueError('Calculation_context: "train" or "test" or "production" must be specified')
+
 
         species= soap_params['species']
         periodic= soap_params['periodic']
@@ -209,28 +219,30 @@ class FandeDataModuleASE(LightningDataModule):
         
         self.soap_hypers = hypers
         
-        if train_or_test == "train":
+        if calculation_context == "train":
             traj = self.traj_train
             forces = self.forces_train
-        elif train_or_test == "test":
+            self.atomic_groups = atomic_groups
+        elif calculation_context == "test":
             traj = self.traj_test
             forces = self.forces_test
         elif trajectory is not None:
             traj = trajectory
-            forces = None
-            raise NotImplementedError("Not implemented yet for trajectory input")
+            forces = np.zeros((len(traj), len(traj[0]), 3))
+            # raise NotImplementedError("Not implemented yet for trajectory input")
    
         for f in traj:
             f.wrap(eps=1e-18)
 
         n_atoms = len(traj[0])
 
-        if train_or_test == "train":
+        if calculation_context == "train":
             self.n_atoms = n_atoms
 
         if atomic_groups is None:
             atomic_groups = [list(range(n_atoms))]
         n_atomic_groups = len(atomic_groups)
+
 
         frames_batches = self.prepare_batches(traj, forces, frames_per_batch=frames_per_batch)
 
@@ -310,16 +322,16 @@ class FandeDataModuleASE(LightningDataModule):
         DX = [torch.tensor(DX_np_grouped[i], dtype=torch.float32).cuda() for i in range(n_atomic_groups)]
         F = [torch.tensor(F_np_grouped[i], dtype=torch.float32).cuda() for i in range(n_atomic_groups)]
 
-        if train_or_test == "train":
+        if calculation_context == "train":
             self.train_DX = DX
             self.train_F = F
-        elif train_or_test == "test":
+        elif calculation_context == "test":
             self.test_DX = DX
             self.test_F = F
 
 
         if trajectory is not None:
-            return DX
+            return DX, F
         else:
             return
 
@@ -356,7 +368,9 @@ class FandeDataModuleASE(LightningDataModule):
             test_centers_positions=None, 
             test_derivatives_positions=None,
             same_centers_derivatives=False):
+        """Deprecated! Use calculate_invariants_librascal instead."""
 
+        raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
         
         traj_test = self.traj_test
 
@@ -429,7 +443,9 @@ class FandeDataModuleASE(LightningDataModule):
             self,
             snapshot: ase.Atoms, 
             same_centers_derivatives=True):
-        
+        """Deprecated! Use calculate_invariants_librascal instead."""
+
+        raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
 
         traj_test = [snapshot]
 
@@ -704,3 +720,24 @@ class FandeDataModuleASE(LightningDataModule):
         # train_Y = train_Y.to(torch.float32)
         # test_X = test_X.to(torch.float32)
         # test_Y = test_Y.to(torch.float32)
+
+
+    def prepare_train_data_loaders(self):
+
+        training_random_samples = 500
+
+        train_data_loaders = []
+        for idx, model in enumerate(self.atomic_groups):
+            # ind_slice = np.sort( np.concatenate( 
+            #     ( np.arange(0,4800), np.arange(11*4800,12*4800), np.random.choice(np.arange(4800,59200), 300, replace=False) ) 
+            #     ) )
+            ind_slice = np.sort(  np.random.choice(np.arange(0,self.train_F[idx].shape[0]), training_random_samples, replace=False) ) 
+            # ind_slice = torch.nonzero(train_F).squeeze()
+            # ind_slice = torch.randperm(ind_slice.shape[0])[0:training_random_samples]
+            # ind_slice = np.sort(  np.arange(0,2550) ) 
+            # ind_slice = np.sort(  np.arange(0,train_F.shape[0]) ) 
+            train_dataset = TensorDataset(self.train_DX[idx][ind_slice], self.train_F[idx][ind_slice])
+            train_loader = DataLoader(train_dataset, batch_size=100_000)
+            train_data_loaders.append(train_loader)
+
+        return train_data_loaders
