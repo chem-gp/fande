@@ -135,7 +135,7 @@ class FandeDataModuleASE(LightningDataModule):
     # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
     def calculate_invariants_librascal(
             self, 
-            soap_params: dict,
+            soap_params=None,
             atomic_groups = None, 
             centers_positions=None, 
             derivatives_positions=None,
@@ -178,46 +178,54 @@ class FandeDataModuleASE(LightningDataModule):
         if calculation_context is None:
             raise ValueError('Calculation_context: "train" or "test" or "production" must be specified')
 
+        if  calculation_context == 'train':
 
-        species= soap_params['species']
-        periodic= soap_params['periodic']
-        rcut= soap_params['rcut']
-        sigma= soap_params['sigma']
-        nmax= soap_params['nmax']
-        lmax= soap_params['lmax']
-        average= soap_params['average']
-        crossover= soap_params['crossover']
-        dtype= soap_params['dtype']
-        sparse= soap_params['sparse']
-        positions = soap_params['positions']
+            if soap_params is None:
+                raise ValueError('soap_params must be specified when when training!')
 
-        hypers = dict(soap_type="PowerSpectrum",
-                    interaction_cutoff=rcut,
-                    max_radial=nmax,
-                    max_angular=lmax,
-                    gaussian_sigma_constant=0.5,
-                    gaussian_sigma_type="Constant",
-                    cutoff_function_type="RadialScaling",
-                    cutoff_smooth_width=0.5,
-                    cutoff_function_parameters=
-                            dict(
-                                    rate=1,
-                                    scale=3.5,
-                                    exponent=4
-                                ),
-                    radial_basis="GTO",
-                    normalize=True,
-                    #   optimization=
-                    #         dict(
-                    #                 Spline=dict(
-                    #                    accuracy=1.0e-05
-                    #                 )
-                    #             ),
-                    compute_gradients=True,
-                    expansion_by_species_method='structure wise'
-                    )
+            species= soap_params['species']
+            periodic= soap_params['periodic']
+            rcut= soap_params['rcut']
+            sigma= soap_params['sigma']
+            nmax= soap_params['nmax']
+            lmax= soap_params['lmax']
+            average= soap_params['average']
+            crossover= soap_params['crossover']
+            dtype= soap_params['dtype']
+            sparse= soap_params['sparse']
+            positions = soap_params['positions']
+
+            hypers = dict(soap_type="PowerSpectrum",
+                        interaction_cutoff=rcut,
+                        max_radial=nmax,
+                        max_angular=lmax,
+                        gaussian_sigma_constant=0.5,
+                        gaussian_sigma_type="Constant",
+                        cutoff_function_type="RadialScaling",
+                        cutoff_smooth_width=0.5,
+                        cutoff_function_parameters=
+                                dict(
+                                        rate=1,
+                                        scale=3.5,
+                                        exponent=4
+                                    ),
+                        radial_basis="GTO",
+                        normalize=True,
+                        #   optimization=
+                        #         dict(
+                        #                 Spline=dict(
+                        #                    accuracy=1.0e-05
+                        #                 )
+                        #             ),
+                        compute_gradients=True,
+                        expansion_by_species_method='structure wise'
+                        )
         
-        self.soap_hypers = hypers
+            self.soap_hypers = hypers
+
+        else:
+            hypers = self.soap_hypers
+
         
         if calculation_context == "train":
             traj = self.traj_train
@@ -239,8 +247,12 @@ class FandeDataModuleASE(LightningDataModule):
         if calculation_context == "train":
             self.n_atoms = n_atoms
 
-        if atomic_groups is None:
+        if atomic_groups == 'all':
             atomic_groups = [list(range(n_atoms))]
+
+        if calculation_context == "production":
+            atomic_groups = self.atomic_groups
+        
         n_atomic_groups = len(atomic_groups)
 
 
@@ -337,8 +349,6 @@ class FandeDataModuleASE(LightningDataModule):
 
     
 
-    def split_training_data_into_groups(self, atomic_groups):
-        pass
 
     def prepare_batches(
             self, 
@@ -445,41 +455,47 @@ class FandeDataModuleASE(LightningDataModule):
             same_centers_derivatives=True):
         """Deprecated! Use calculate_invariants_librascal instead."""
 
-        raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
+        # raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
 
-        traj_test = [snapshot]
+        traj = [snapshot]
 
-        for f in traj_test:
-            f.wrap(eps=1e-18)
+        # for f in traj_test:
+        #     f.wrap(eps=1e-18)
 
-        n_atoms = len(traj_test[0])
+        # n_atoms = len(traj_test[0])
 
-        print(f"Calculating full invariants for a single snapshot...")      
-        hypers = self.soap_hypers 
-        soap_test = SphericalInvariants(**hypers)
-        managers_test = soap_test.transform(traj_test)
-        soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
-        test_grad_info = managers_test.get_gradients_info()
-        if same_centers_derivatives:
-            print("Subsampling the gradients for selected positions...")
-            a = test_grad_info[:,1]
-            b = test_grad_info[:,2]
-            test_indices_sub = np.where((a%n_atoms == b%n_atoms))[0]
+        # print(f"Calculating full invariants for a single snapshot...")      
+        # hypers = self.soap_hypers 
+        # soap_test = SphericalInvariants(**hypers)
+        # managers_test = soap_test.transform(traj_test)
+        # soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
+        # test_grad_info = managers_test.get_gradients_info()
+        # if same_centers_derivatives:
+        #     print("Subsampling the gradients for selected positions...")
+        #     a = test_grad_info[:,1]
+        #     b = test_grad_info[:,2]
+        #     test_indices_sub = np.where((a%n_atoms == b%n_atoms))[0]
             
-            test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
-            test_indices_sub_3x[0::3] = 3*test_indices_sub
-            test_indices_sub_3x[1::3] = 3*test_indices_sub+1
-            test_indices_sub_3x[2::3] = 3*test_indices_sub+2
-            test_DX_np = soap_grad_array_test[test_indices_sub_3x]
+        #     test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
+        #     test_indices_sub_3x[0::3] = 3*test_indices_sub
+        #     test_indices_sub_3x[1::3] = 3*test_indices_sub+1
+        #     test_indices_sub_3x[2::3] = 3*test_indices_sub+2
+        #     test_DX_np = soap_grad_array_test[test_indices_sub_3x]
 
-            self.snap_DX = torch.tensor(test_DX_np, dtype=torch.float32)
+        #     self.snap_DX = torch.tensor(test_DX_np, dtype=torch.float32)
 
-        else:
-            raise NotImplementedError
+        # else:
+        #     raise NotImplementedError
 
-        del soap_test, managers_test, soap_grad_array_test, test_DX_np
+        # del soap_test, managers_test, soap_grad_array_test, test_DX_np
 
-        return test_grad_info
+
+        self.snap_DX, F = self.calculate_invariants_librascal(traj, same_centers_derivatives=same_centers_derivatives, calculation_context="production")
+
+        print(self.snap_DX)
+
+
+        return 
 
 
 

@@ -386,51 +386,52 @@ class PredictorASE:
             # if self.hparams["device"] == "gpu":
             #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
 
-            test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
-            test_dl = DataLoader(test, batch_size=self.batch_size)
+            for idx, model in enumerate(self.ag_force_model.models): 
 
-            res = self.trainer_f.predict(self.model_f, test_dl)[0]
+                test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
+                test_dl = DataLoader(test, batch_size=self.batch_size)
+                res = self.trainer_f.predict(self.model_f, test_dl)[0]
 
-            predictions_torch = res.mean
+                predictions_torch = res.mean
 
-            print(self.test_F.shape)
+                print(self.test_F.shape)
 
-            # variances_torch = res.variance
-            # print(variances_torch, res.confidence_region())
+                # variances_torch = res.variance
+                # print(variances_torch, res.confidence_region())
 
-            # lower, upper = res.confidence_region()
-            # lower = 0.1 * lower.cpu().detach().numpy()
-            # upper = 0.1 * upper.cpu().detach().numpy()
+                # lower, upper = res.confidence_region()
+                # lower = 0.1 * lower.cpu().detach().numpy()
+                # upper = 0.1 * upper.cpu().detach().numpy()
 
-            # lower = lower.tolist()
-            # upper = upper.tolist()
-            # print(lower, upper)
+                # lower = lower.tolist()
+                # upper = upper.tolist()
+                # print(lower, upper)
 
-            # print("HI")
+                # print("HI")
 
-            predictions = res.mean.cpu().detach().numpy()
-            actual_values = self.fdm.test_F.cpu().detach().numpy()
-            plt.rcParams["figure.figsize"] = (30, 10)
+                predictions = res.mean.cpu().detach().numpy()
+                actual_values = self.fdm.test_F.cpu().detach().numpy()
+                plt.rcParams["figure.figsize"] = (30, 10)
 
-            predictions_xyz = np.concatenate( (predictions[0::3], predictions[1::3], predictions[2::3]))
-            actual_values_xyz = np.concatenate( (actual_values[0::3], actual_values[1::3], actual_values[2::3]))
+                predictions_xyz = np.concatenate( (predictions[0::3], predictions[1::3], predictions[2::3]))
+                actual_values_xyz = np.concatenate( (actual_values[0::3], actual_values[1::3], actual_values[2::3]))
 
-            plt.plot(predictions_xyz, color="blue", label="predictions", linewidth=0.4)
-            plt.plot(actual_values_xyz, color="red", label="actual values", linewidth=0.4)
+                plt.plot(predictions_xyz, color="blue", label="predictions", linewidth=0.4)
+                plt.plot(actual_values_xyz, color="red", label="actual values", linewidth=0.4)
 
-            plt.legend()
-            # plt.xlim(3000,4000)
-            # plt.ylim(0, 1.0)
-            # wandb.log({"all prediction": wandb.Image(plt)})
-            plt.show()
-            f_mae = torchmetrics.functional.mean_absolute_error(
-                torch.tensor(predictions), torch.tensor(actual_values)
-            )
-            f_mse = torchmetrics.functional.mean_squared_error(
-                torch.tensor(predictions), torch.tensor(actual_values)
-            )
-            print("Forces MAE: %5.4f" % f_mae.item())
-            print("Forces MSE: %5.4f" % f_mse.item())
+                plt.legend()
+                # plt.xlim(3000,4000)
+                # plt.ylim(0, 1.0)
+                # wandb.log({"all prediction": wandb.Image(plt)})
+                plt.show()
+                f_mae = torchmetrics.functional.mean_absolute_error(
+                    torch.tensor(predictions), torch.tensor(actual_values)
+                )
+                f_mse = torchmetrics.functional.mean_squared_error(
+                    torch.tensor(predictions), torch.tensor(actual_values)
+                )
+                print("Forces MAE: %5.4f" % f_mae.item())
+                print("Forces MSE: %5.4f" % f_mse.item())
             # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
 
 
@@ -564,6 +565,7 @@ class PredictorASE:
 
             snap_DX = self.fdm.snap_DX
 
+
             snap_DX = torch.tensor(snap_DX, dtype = torch.float32 )
             zeros_F = torch.zeros_like(snap_DX[:,0])
 
@@ -576,7 +578,7 @@ class PredictorASE:
 
             predictions_torch = res.mean
 
-            print("predictions done!")
+            # print("predictions done!")
 
             # variances_torch = res.variance
             # print(variances_torch, res.confidence_region())
@@ -593,7 +595,6 @@ class PredictorASE:
             predictions = res.mean.cpu().detach().numpy()
             actual_values = self.test_F.cpu().detach().numpy()
 
-            
             pred_forces = predictions.reshape((n_atoms, 3))
 
             return pred_forces
@@ -642,19 +643,19 @@ class PredictorASE:
             predictions_errors.append(predictions_errors_idx)
 
 
-        for idx, pred in enumerate(predictions_errors):
-            plt.plot( pred, label="Atomic group " + str(idx) )
+        for idx, pred_err in enumerate(predictions_errors):
+            plt.plot( pred_err, label="Atomic group " + str(idx) )
             plt.legend()
             plt.show()
 
-            plt.hist(pred, bins=30, label="Atomic group " + str(idx))
+            plt.hist(pred_err, bins=30, label="Atomic group " + str(idx))
             plt.legend()
             plt.show()
 
             print("Erorr metrics for atomic group ", idx)
-            print("MSE: ", np.mean(pred**2) )
-            print("MAE: ", np.mean( abs(pred)) )
-            print("Max error: ", max(abs(pred)))
+            print("MSE: ", np.mean(pred_err**2) )
+            print("MAE: ", np.mean( abs(pred_err)) )
+            print("Max error: ", max(abs(pred_err)))
 
 
         print("Analyzing where predictions are the worst...")

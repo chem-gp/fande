@@ -2,7 +2,7 @@ import fande.models
 
 import logging
 
-logging.basicConfig(filename='FANDE.LOG', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='fande.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
