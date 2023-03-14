@@ -772,19 +772,28 @@ class FandeDataModuleASE(LightningDataModule):
 
 
     def prepare_train_data_loaders(self, samples_per_group):
+        """
+        Prepare data loaders for training. Currently data loaders are created within the FandeDataModule class and then passed to the group medel classes.
 
+        Parameters
+        ----------
+        samples_per_group : list of int
+            Number of training random samples to use for each group. If None, all samples are used.
+
+        Returns
+        -------
+        train_data_loaders : list of torch.utils.data.DataLoader
+            List of data loaders for training for each atomic group model.
+        """
 
         train_data_loaders = []
         for idx, model in enumerate(self.atomic_groups_train):
             training_random_samples = samples_per_group[idx]
-            # ind_slice = np.sort( np.concatenate( 
-            #     ( np.arange(0,4800), np.arange(11*4800,12*4800), np.random.choice(np.arange(4800,59200), 300, replace=False) ) 
-            #     ) )
-            ind_slice = np.sort(  np.random.choice(np.arange(0,self.train_F[idx].shape[0]), training_random_samples, replace=False) ) 
-            # ind_slice = torch.nonzero(train_F).squeeze()
-            # ind_slice = torch.randperm(ind_slice.shape[0])[0:training_random_samples]
-            # ind_slice = np.sort(  np.arange(0,2550) ) 
-            # ind_slice = np.sort(  np.arange(0,train_F.shape[0]) ) 
+            if training_random_samples is None or training_random_samples == 'all':
+                ind_slice = np.sort( np.arange(0, self.train_F[idx].shape[0]) )
+            else:
+                ind_slice = np.sort(  np.random.choice(np.arange(0, self.train_F[idx].shape[0]), training_random_samples, replace=False) ) 
+
             train_dataset = TensorDataset(self.train_DX[idx][ind_slice], self.train_F[idx][ind_slice])
             train_loader = DataLoader(train_dataset, batch_size=100_000)
             train_data_loaders.append(train_loader)

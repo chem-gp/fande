@@ -568,9 +568,7 @@ class PredictorASE:
             forces = np.zeros((n_atoms, 3))
             for idx, model in enumerate(self.ag_force_model.models):              
 
-                snap_DX = torch.tensor(DX_grouped[idx], dtype = torch.float32 )
                 zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
-
 
                 test = TensorDataset(DX_grouped[idx], zeros_F)
                 test_dl = DataLoader(test, batch_size=self.batch_size)
@@ -582,18 +580,15 @@ class PredictorASE:
 
                 predictions = res.mean.cpu().detach().numpy()
 
-                # print("predictions done!")
-
                 # variances_torch = res.variance
                 # print(variances_torch, res.confidence_region())
-
                 # lower, upper = res.confidence_region()
                 # lower = 0.1 * lower.cpu().detach().numpy()
                 # upper = 0.1 * upper.cpu().detach().numpy()
-
                 # lower = lower.tolist()
                 # upper = upper.tolist()
-                # print(lower, upper)            
+                # print(lower, upper)   
+                         
                 n_atoms_in_group = len(atomic_groups[idx])
                 pred_forces = predictions.reshape((n_atoms_in_group, 3))
                 # predictions_grouped.append(pred_forces)
@@ -632,8 +627,8 @@ class PredictorASE:
             test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
             test_dl = DataLoader(test, batch_size=self.batch_size)
 
-            trainer_f = self.ag_force_model.trainers[0]
-            model_f = self.ag_force_model.models[0]
+            trainer_f = self.ag_force_model.trainers[idx]
+            model_f = self.ag_force_model.models[idx]
 
             res = trainer_f.predict(model_f, test_dl)[0]
 
@@ -656,7 +651,7 @@ class PredictorASE:
             plt.legend()
             plt.show()
 
-            print("Erorr metrics for atomic group ", idx)
+            print("Error metrics for atomic group ", idx)
             print("MSE: ", np.mean(pred_err**2) )
             print("MAE: ", np.mean( abs(pred_err)) )
             print("Max error: ", max(abs(pred_err)))
