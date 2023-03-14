@@ -771,12 +771,12 @@ class FandeDataModuleASE(LightningDataModule):
         # test_Y = test_Y.to(torch.float32)
 
 
-    def prepare_train_data_loaders(self):
+    def prepare_train_data_loaders(self, samples_per_group):
 
-        training_random_samples = 500
 
         train_data_loaders = []
-        for idx, model in enumerate(self.atomic_groups):
+        for idx, model in enumerate(self.atomic_groups_train):
+            training_random_samples = samples_per_group[idx]
             # ind_slice = np.sort( np.concatenate( 
             #     ( np.arange(0,4800), np.arange(11*4800,12*4800), np.random.choice(np.arange(4800,59200), 300, replace=False) ) 
             #     ) )
