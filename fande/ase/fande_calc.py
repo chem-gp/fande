@@ -121,12 +121,14 @@ class FandeCalc(Calculator):
         stresses = np.zeros((natoms, 3, 3))
 
         # forces, forces_var = self.predictor.predict_forces_single(self.atoms)
+        # print("Calculating FORCES!")
 
         forces = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
         self.forces = forces
 
         # comparing with supporting calculation
         if self.supporting_calc is not None:
+            # print("Calculating FORCES with supporting calculator!")
             a_ = self.atoms.copy()
             a_.calc = self.supporting_calc
             supporting_forces = a_.get_forces()

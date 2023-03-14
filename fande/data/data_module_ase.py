@@ -374,8 +374,8 @@ class FandeDataModuleASE(LightningDataModule):
             self.test_F = F
 
 
-        if trajectory is not None:
-            return DX, F
+        if calculation_context == 'production':
+            return DX
         else:
             return
 
@@ -485,48 +485,12 @@ class FandeDataModuleASE(LightningDataModule):
             self,
             snapshot: ase.Atoms, 
             same_centers_derivatives=True):
-        """Deprecated! Use calculate_invariants_librascal instead."""
-
-        # raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
 
         traj = [snapshot]
-
-        # for f in traj_test:
-        #     f.wrap(eps=1e-18)
-
-        # n_atoms = len(traj_test[0])
-
-        # print(f"Calculating full invariants for a single snapshot...")      
-        # hypers = self.soap_hypers 
-        # soap_test = SphericalInvariants(**hypers)
-        # managers_test = soap_test.transform(traj_test)
-        # soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
-        # test_grad_info = managers_test.get_gradients_info()
-        # if same_centers_derivatives:
-        #     print("Subsampling the gradients for selected positions...")
-        #     a = test_grad_info[:,1]
-        #     b = test_grad_info[:,2]
-        #     test_indices_sub = np.where((a%n_atoms == b%n_atoms))[0]
-            
-        #     test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
-        #     test_indices_sub_3x[0::3] = 3*test_indices_sub
-        #     test_indices_sub_3x[1::3] = 3*test_indices_sub+1
-        #     test_indices_sub_3x[2::3] = 3*test_indices_sub+2
-        #     test_DX_np = soap_grad_array_test[test_indices_sub_3x]
-
-        #     self.snap_DX = torch.tensor(test_DX_np, dtype=torch.float32)
-
-        # else:
-        #     raise NotImplementedError
-
-        # del soap_test, managers_test, soap_grad_array_test, test_DX_np
-
-
-        snap_DX, F = self.calculate_invariants_librascal(
+        snap_DX = self.calculate_invariants_librascal(
             trajectory=traj, 
             same_centers_derivatives=same_centers_derivatives, 
             calculation_context="production")
-
 
         return snap_DX
 
