@@ -65,7 +65,9 @@ class FandeDataModuleASE(LightningDataModule):
         self.test_X = None
         self.test_E = None
 
-        self.atomic_groups = None
+        self.atomic_groups_train = None
+        self.centers_positions_train = None
+        self.derivatives_positions_train = None
         self.n_atoms = None
 
         self.batch_size = 1_000_000
@@ -233,9 +235,9 @@ class FandeDataModuleASE(LightningDataModule):
         if calculation_context == "train":
             traj = self.traj_train
             forces = self.forces_train
-            self.atomic_groups = atomic_groups
-            self.centers_positions = centers_positions
-            self.derivatives_positions = derivatives_positions
+            self.atomic_groups_train = atomic_groups
+            self.centers_positions_train = centers_positions
+            self.derivatives_positions_train = derivatives_positions
         elif calculation_context == "test":
             traj = self.traj_test
             forces = self.forces_test
@@ -243,9 +245,10 @@ class FandeDataModuleASE(LightningDataModule):
         if trajectory is not None and calculation_context == "production":
             traj = trajectory
             forces = np.zeros((len(traj), len(traj[0]), 3))
-            atomic_groups = self.atomic_groups
-            centers_positions = self.centers_positions
-            # print(atomic_groups)
+            atomic_groups = self.atomic_groups_train
+            centers_positions = self.centers_positions_train
+            derivatives_positions = self.derivatives_positions_train
+            # print("Production mode")
             # raise NotImplementedError("Not implemented yet for trajectory input")
    
         for f in traj:
@@ -298,14 +301,30 @@ class FandeDataModuleASE(LightningDataModule):
             a = grad_info[:,1]
             b = grad_info[:,2]
             for ind_ag, ag in enumerate(atomic_groups):
+                # a very important step where we select the relevant indices:
+                # for now we select the coinciding centers and derivatives atoms that also belong to the atomic group
                 indices_sub = np.where(
                     np.in1d(a%n_atoms, centers_positions) & 
                     np.in1d(b%n_atoms, derivatives_positions) &
                     (a%n_atoms == b%n_atoms) &
-                    np.in1d(a%n_atoms, ag) )[0]
+                    np.in1d(b%n_atoms, ag) )[0]
                 
-                # print(a%n_atoms == b%n_atoms)
-                # return
+                ### DEBUG
+                # print(grad_info.shape)
+                # indices_sub_ = np.where(
+                #     np.in1d(a%n_atoms, centers_positions) & 
+                #     np.in1d(b%n_atoms, derivatives_positions) &
+                #     (a%n_atoms == b%n_atoms) &
+                #     np.in1d(b%n_atoms, ag) 
+                #     )[0]
+                # # print(a[0:20]%n_atoms)
+                # # print(b[0:20]%n_atoms)
+                # print(np.count_nonzero((a%n_atoms == b%n_atoms)))
+                # # print("Centers", centers_positions)
+                # print("Derivatives", derivatives_positions)
+                # # print("Atomic group", ag)
+                # print("Indices sub", indices_sub_)
+                ### DEBUG
 
                 forces_sub = np.zeros((grad_info[indices_sub].shape[0],3) )
                 grad_info_sub = grad_info[indices_sub]
@@ -470,7 +489,7 @@ class FandeDataModuleASE(LightningDataModule):
 
         # raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
 
-        traj = [snapshot, snapshot]
+        traj = [snapshot]
 
         # for f in traj_test:
         #     f.wrap(eps=1e-18)
@@ -507,8 +526,6 @@ class FandeDataModuleASE(LightningDataModule):
             trajectory=traj, 
             same_centers_derivatives=same_centers_derivatives, 
             calculation_context="production")
-
-        print(snap_DX)
 
 
         return snap_DX

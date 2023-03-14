@@ -149,12 +149,10 @@ class PredictorASE:
         self.soap_params = soap_params
 
         self.model_e = model_e
-        self.model_f = atomic_group_force_model.models[0]
 
         self.ag_force_model = atomic_group_force_model
 
         self.trainer_e = trainer_e
-        self.trainer_f = atomic_group_force_model.trainers[0]
 
 
         self.test_X = fdm.test_X
@@ -554,52 +552,56 @@ class PredictorASE:
             return
 
 
-    def predict_forces_single_snapshot_r(self, snapshot):
+    def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
             # if self.hparams["device"] == "gpu":
             #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
 
             n_atoms = len(snapshot)
 
-            snap_DX = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
-
+            DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+            atomic_groups = self.fdm.atomic_groups_train
             # snap_DX = self.fdm.snap_DX
 
-            print(snap_DX)
+            # print(snap_DX)
+            # predictions_grouped = []
+            forces = np.zeros((n_atoms, 3))
+            for idx, model in enumerate(self.ag_force_model.models):              
+
+                snap_DX = torch.tensor(DX_grouped[idx], dtype = torch.float32 )
+                zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
 
 
-            snap_DX = torch.tensor(snap_DX, dtype = torch.float32 )
-            zeros_F = torch.zeros_like(snap_DX[:,0])
+                test = TensorDataset(DX_grouped[idx], zeros_F)
+                test_dl = DataLoader(test, batch_size=self.batch_size)
+                trainer_f = self.ag_force_model.trainers[idx]
 
-            print(snap_DX.shape, zeros_F.shape)
+                res = trainer_f.predict(model, test_dl)[0]
 
-            test = TensorDataset(snap_DX, zeros_F)
-            test_dl = DataLoader(test, batch_size=self.batch_size)
+                predictions_torch = res.mean
 
-            res = self.trainer_f.predict(self.model_f, test_dl)[0]
+                predictions = res.mean.cpu().detach().numpy()
 
-            predictions_torch = res.mean
+                # print("predictions done!")
 
-            # print("predictions done!")
+                # variances_torch = res.variance
+                # print(variances_torch, res.confidence_region())
 
-            # variances_torch = res.variance
-            # print(variances_torch, res.confidence_region())
+                # lower, upper = res.confidence_region()
+                # lower = 0.1 * lower.cpu().detach().numpy()
+                # upper = 0.1 * upper.cpu().detach().numpy()
 
-            # lower, upper = res.confidence_region()
-            # lower = 0.1 * lower.cpu().detach().numpy()
-            # upper = 0.1 * upper.cpu().detach().numpy()
+                # lower = lower.tolist()
+                # upper = upper.tolist()
+                # print(lower, upper)            
+                n_atoms_in_group = len(atomic_groups[idx])
+                pred_forces = predictions.reshape((n_atoms_in_group, 3))
+                # predictions_grouped.append(pred_forces)
 
-            # lower = lower.tolist()
-            # upper = upper.tolist()
-            # print(lower, upper)
+                forces[atomic_groups[idx]] = pred_forces
+            
 
-
-            predictions = res.mean.cpu().detach().numpy()
-            actual_values = self.test_F.cpu().detach().numpy()
-
-            pred_forces = predictions.reshape((n_atoms, 3))
-
-            return pred_forces
+            return forces
 
 
     def test_errors(self, plot=False, view_worst_atoms=False):
@@ -633,7 +635,7 @@ class PredictorASE:
             trainer_f = self.ag_force_model.trainers[0]
             model_f = self.ag_force_model.models[0]
 
-            res = trainer_f.predict(self.model_f, test_dl)[0]
+            res = trainer_f.predict(model_f, test_dl)[0]
 
             predictions_torch = res.mean
 
