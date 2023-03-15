@@ -753,6 +753,13 @@ class FandeDataModuleASE(LightningDataModule):
         train_data_loaders = []
         for idx, model in enumerate(self.atomic_groups_train):
             training_random_samples = samples_per_group[idx]
+
+            ###
+            total_training_random_samples = 10
+            high_force_samples = 5
+            random_samples = total_training_random_samples - high_force_samples
+            ###
+
             if training_random_samples is None or training_random_samples == 'all':
                 ind_slice = np.sort( np.arange(0, self.train_F[idx].shape[0]) )
             else:
