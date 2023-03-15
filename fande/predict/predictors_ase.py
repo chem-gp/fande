@@ -574,6 +574,7 @@ class PredictorASE:
                 test_dl = DataLoader(test, batch_size=self.batch_size)
                 trainer_f = self.ag_force_model.trainers[idx]
 
+                # model.eval()
                 res = trainer_f.predict(model, test_dl)[0]
 
                 predictions_torch = res.mean
@@ -593,7 +594,7 @@ class PredictorASE:
                 pred_forces = predictions.reshape((n_atoms_in_group, 3))
                 # predictions_grouped.append(pred_forces)
 
-                forces[atomic_groups[idx]] = pred_forces
+                forces[sorted(atomic_groups[idx])] = pred_forces
             
 
             return forces
