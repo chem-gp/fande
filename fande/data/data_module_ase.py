@@ -735,7 +735,10 @@ class FandeDataModuleASE(LightningDataModule):
         # test_Y = test_Y.to(torch.float32)
 
 
-    def prepare_train_data_loaders(self, samples_per_group):
+    def prepare_train_data_loaders(
+            self, 
+            total_samples_per_group, 
+            high_force_samples_per_group):
         """
         Prepare data loaders for training. Currently data loaders are created within the FandeDataModule class and then passed to the group medel classes.
 
@@ -752,21 +755,30 @@ class FandeDataModuleASE(LightningDataModule):
 
         train_data_loaders = []
         for idx, model in enumerate(self.atomic_groups_train):
-            training_random_samples = samples_per_group[idx]
 
-            ###
-            total_training_random_samples = 10
-            high_force_samples = 5
+            total_training_random_samples = total_samples_per_group[idx]
+            high_force_samples = high_force_samples_per_group[idx]
             random_samples = total_training_random_samples - high_force_samples
-            ###
 
-            if training_random_samples is None or training_random_samples == 'all':
+
+            if total_training_random_samples is None or total_training_random_samples == 'all':
                 ind_slice = np.sort( np.arange(0, self.train_F[idx].shape[0]) )
+                indices = ind_slice
             else:
-                ind_slice = np.sort(  np.random.choice(np.arange(0, self.train_F[idx].shape[0]), training_random_samples, replace=False) ) 
+                ind_slice = np.sort(  np.random.choice(np.arange(0, self.train_F[idx].shape[0]), random_samples, replace=False) )
+                indices_high_force = torch.concat( 
+                    (torch.topk(self.train_F[idx], high_force_samples//2, largest=True)[1],  
+                    torch.topk(self.train_F[idx], high_force_samples//2, largest=False)[1]) ).cpu().numpy() 
 
-            train_dataset = TensorDataset(self.train_DX[idx][ind_slice], self.train_F[idx][ind_slice])
+                indices = np.concatenate((ind_slice, indices_high_force))
+                indices = np.unique(indices)
+
+            train_dataset = TensorDataset(self.train_DX[idx][indices], self.train_F[idx][indices])
             train_loader = DataLoader(train_dataset, batch_size=100_000)
             train_data_loaders.append(train_loader)
+
+            print("Dataloader for group {} created".format(idx))
+            print("Number of samples in dataloader: {}".format(len(train_dataset)) )
+                  
 
         return train_data_loaders
