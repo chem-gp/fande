@@ -16,7 +16,11 @@ from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
-import wandb
+try:
+    import wandb
+except ImportError:
+    print("wandb not installed, skipping import")
+
 
 from torch.optim import Adam
 
@@ -279,7 +283,7 @@ class GroupModelForces(LightningModule):
         self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
-            trainer = Trainer(gpus=1, max_epochs=self.per_model_hparams[idx]['num_epochs'], precision=32)
+            trainer = Trainer(accelerator='gpu', devices=1, max_epochs=self.per_model_hparams[idx]['num_epochs'], precision=32)
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)

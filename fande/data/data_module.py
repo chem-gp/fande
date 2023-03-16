@@ -13,7 +13,11 @@ import torch
 import numpy as np
 import sparse
 
-import wandb
+
+try:
+    import wandb
+except ImportError:
+    print("wandb not installed, skipping import")
 
 from fande.data import FastLoader
 

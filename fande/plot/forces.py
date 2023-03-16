@@ -1,10 +1,20 @@
-import plotly.graph_objects as go
-import plotly.io as pio
+
+try:
+    import plotly.graph_objects as go
+    import plotly.io as pio
+    pio.renderers.default = "browser"
+except ImportError:
+    print("plotly not installed...")
+
+
 import numpy as np
 
-import wandb
+try:
+    import wandb
+except ImportError:
+    print("wandb not installed...")
 
-pio.renderers.default = "browser"
+
 
 
 def atom_forces_3d(mol_traj, forces_np, atoms_ind, show=False):
