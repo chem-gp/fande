@@ -70,6 +70,8 @@ class FandeDataModuleASE(LightningDataModule):
         self.derivatives_positions_train = None
         self.n_atoms = None
 
+        self.train_indices = None
+
         self.batch_size = 1_000_000
 
         # if units=='hartree_bohr':
@@ -753,6 +755,8 @@ class FandeDataModuleASE(LightningDataModule):
             List of data loaders for training for each atomic group model.
         """
 
+        train_indices = []
+
         train_data_loaders = []
         for idx, model in enumerate(self.atomic_groups_train):
 
@@ -773,12 +777,15 @@ class FandeDataModuleASE(LightningDataModule):
                 indices = np.concatenate((ind_slice, indices_high_force))
                 indices = np.unique(indices)
 
+            train_indices.append(indices.tolist())
+
             train_dataset = TensorDataset(self.train_DX[idx][indices], self.train_F[idx][indices])
             train_loader = DataLoader(train_dataset, batch_size=100_000)
             train_data_loaders.append(train_loader)
 
             print("Dataloader for group {} created".format(idx))
             print("Number of samples in dataloader: {}".format(len(train_dataset)) )
-                  
+        
+        self.train_indices = train_indices      
 
         return train_data_loaders

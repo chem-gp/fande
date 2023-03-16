@@ -80,8 +80,8 @@ class ExactGPModelForces(ExactGP, LightningModule):
 
         # self.covar_module = LinearKernel()
 
-        if hparams is not None:
-            self.hparams.update(hparams)
+        # if hparams is not None:
+        #     self.hparams.update(hparams)
 
 
     def forward(self, x):
@@ -154,12 +154,15 @@ class ModelForces(LightningModule):
             train_x=None, 
             train_y=None,
             atomic_group=None, 
-            hparams=None):
+            hparams=None,
+            id=0):
         """Initialize gp model with mean and covar."""
         super().__init__()
 
         # self.hparams = hparams
 
+        if hparams is not None:
+            self.hparams.update(hparams)
         
         # self.save_hyperparameters()
         #add prior for badly conditioned datasets
@@ -182,13 +185,13 @@ class ModelForces(LightningModule):
         self.train_x = train_x
         self.train_y = train_y
 
-        self.num_epochs = 10
-        self.learning_rate = 0.01
-        self.precision = 32 
+        self.id = id
 
-        if hparams is not None:
-            self.hparams.update(hparams)
-        
+        # self.num_epochs = 10
+        self.learning_rate = self.hparams['per_model_hparams'][id]['learning_rate']
+        # self.precision = 32 
+
+       
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
 
         # SVGP Approximate GP model with Variational ELBO as loss function
@@ -300,7 +303,7 @@ class GroupModelForces(LightningModule):
         self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
-            trainer = Trainer(accelerator='gpu', devices=1, max_epochs=self.per_model_hparams[idx]['num_epochs'], precision=32)
+            trainer = Trainer(accelerator='gpu', devices=1, max_epochs=self.per_model_hparams[model.id]['num_epochs'], precision=32)
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
