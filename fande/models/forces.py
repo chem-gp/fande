@@ -57,11 +57,17 @@ class SVGPModelForces(ApproximateGP):
 
 class ExactGPModelForces(ExactGP, LightningModule):
     def __init__(
-        self, train_X, train_Y, likelihood
+        self, train_X, train_Y, likelihood, soap_dim=None
     ): 
         super().__init__(train_X, train_Y, likelihood) # the old-style super(ExactGPModel, self) was causing error!
         
-        self.soap_dim = train_X.shape[-1]
+        print(self.hparams)
+
+        if train_X is not None:
+            self.soap_dim = train_X.shape[-1]
+        else:
+            print(self.hparams)
+            self.soap_dim =soap_dim
 
         # self.mean_module = ZeroMean()
         self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
@@ -73,6 +79,9 @@ class ExactGPModelForces(ExactGP, LightningModule):
         # self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
 
         # self.covar_module = LinearKernel()
+
+        if hparams is not None:
+            self.hparams.update(hparams)
 
 
     def forward(self, x):
@@ -151,7 +160,7 @@ class ModelForces(LightningModule):
 
         # self.hparams = hparams
 
-        self.hparams.update(hparams)
+        
         # self.save_hyperparameters()
         #add prior for badly conditioned datasets
         # this prior can affect predictions badly
@@ -159,8 +168,11 @@ class ModelForces(LightningModule):
     #     self.likelihood = gpytorch.likelihoods.GaussianLikelihood(
     # noise_prior=gpytorch.priors.SmoothedBoxPrior(0.1, 1.5, sigma=0.001))
 
-        self.likelihood = gpytorch.likelihoods.GaussianLikelihood()      
-        self.model = ExactGPModelForces(train_x, train_y, self.likelihood)       
+        self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        if train_x is not None:
+            self.soap_dim = train_x.shape[-1]  
+        # soap_dim = train_x.shape[-1]    
+        self.model = ExactGPModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)       
         self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
             self.likelihood, self.model)
         
@@ -173,6 +185,11 @@ class ModelForces(LightningModule):
         self.num_epochs = 10
         self.learning_rate = 0.01
         self.precision = 32 
+
+        if hparams is not None:
+            self.hparams.update(hparams)
+        
+        self.save_hyperparameters(ignore=['train_x', 'train_y'])
 
         # SVGP Approximate GP model with Variational ELBO as loss function
         # self.inducing_points = train_x[0:2:2000, :]
@@ -287,6 +304,7 @@ class GroupModelForces(LightningModule):
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
+        self.save_hyperparameters()
 
         self.fdm = fdm
 
