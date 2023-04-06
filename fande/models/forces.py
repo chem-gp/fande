@@ -224,6 +224,7 @@ class ModelForces(LightningModule):
 
         loss = -self.mll(output, target)
         # wandb.log({"train/loss": loss})
+        # self.log("loss", loss, prog_bar=True, on_step=False, on_epoch=True) # unfortunately slows down the training
 
         return {'loss': loss}
 
@@ -276,6 +277,14 @@ class ModelForces(LightningModule):
             reshaped prediction
         """
         return self(input_).mean.reshape(-1, len(self.atomic_group), 3)
+    
+    # def info(self, dictionary: dict) -> None:
+    #     for key, value in dictionary.items():
+    #         self.log(key, value, prog_bar=True)
+
+    # def on_training_epoch_end(self, outputs) -> None:
+        # loss = sum(output['loss'] for output in outputs) / len(outputs)
+        # print(loss)
 
 
 
@@ -332,7 +341,7 @@ class GroupModelForces(LightningModule):
 
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} of {len(self.models)}")
-            self.trainers[idx].fit(model, self.train_data_loaders[idx])
+            self.trainers[idx].fit(model, self.train_data_loaders[idx]) #, log_every_n_steps=10)
 
 
 
