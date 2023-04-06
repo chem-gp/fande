@@ -653,7 +653,7 @@ class PredictorASE:
             plt.show()
 
             print("Error metrics for atomic group ", idx)
-            print("MSE: ", np.mean(pred_err**2) )
+            print("RMSE: ", np.sqrt( np.mean(pred_err**2) ) )
             print("MAE: ", np.mean( abs(pred_err)) )
             print("Max error: ", max(abs(pred_err)))
 
