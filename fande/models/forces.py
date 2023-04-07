@@ -194,6 +194,7 @@ class ModelForces(LightningModule):
        
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
 
+
         # SVGP Approximate GP model with Variational ELBO as loss function
         # self.inducing_points = train_x[0:2:2000, :]
         # self.model = SVGPModelForces(inducing_points=self.inducing_points)
@@ -223,7 +224,7 @@ class ModelForces(LightningModule):
         output = self.model(input_)
 
         loss = -self.mll(output, target)
-        # wandb.log({"train/loss": loss})
+        wandb.log({f"train/loss_{self.id}": loss})
         # self.log("loss", loss, prog_bar=True, on_step=False, on_epoch=True) # unfortunately slows down the training
 
         return {'loss': loss}
@@ -319,6 +320,8 @@ class GroupModelForces(LightningModule):
         self.save_hyperparameters()
 
         self.fdm = fdm
+
+         #, mode="disabled")
 
 
 
