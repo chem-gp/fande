@@ -59,7 +59,7 @@ class FandeCalc(Calculator):
 
         self.supporting_calc = None
         self.forces_errors = []
-        forces_errors_max = []
+        self.forces_errors_max = []
         self.forces_errors_plot_file = forces_errors_plot_file
 
         # self.results = None
@@ -140,7 +140,6 @@ class FandeCalc(Calculator):
 
 
             if self.forces_errors_plot_file is not None and len(self.forces_errors)%self.forces_errors_loginterval==0:
-                wandb.log({f"md-run/forces_errors": self.forces_errors_max})
                 self.make_forces_errors_plot(plot_show=False, plot_file=self.forces_errors_plot_file)
 
         # print("FORCES calculated!")
@@ -236,6 +235,7 @@ class FandeCalc(Calculator):
             plt.legend(atomic_groups[n], title=titles[n], ncol=3, loc='center left', bbox_to_anchor=(1, 0.5),title_fontsize=18, fontsize=16)
             plt.xlabel("step", fontsize=16)
             plt.ylabel("forces max abs component error", fontsize=16)
+            wandb.log({f"md-runs/forces_errors_group_{n}": float(np.abs(forces_errors[-1, atomic_groups[n], :]).max()) })
             if plot_file is not None and plot_show is False:
                 plt.savefig(os.path.splitext(plot_file)[0] + "_group_{}.png".format(n), bbox_inches='tight' )
                 plt.close()

@@ -343,7 +343,7 @@ class GroupModelForces(LightningModule):
         fande.logger.info("Training force models")
 
         for idx, model in enumerate(self.models):
-            print(f"Training force model {idx} of {len(self.models)}")
+            print(f"Training force model {idx} (Total {len(self.models)} models)")
             self.trainers[idx].fit(model, self.train_data_loaders[idx]) #, log_every_n_steps=10)
 
 
