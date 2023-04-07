@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 
 from xtb.ase.calculator import XTB
 
+import wandb
+
 
 class FandeCalc(Calculator):
     """See for example:
@@ -57,6 +59,7 @@ class FandeCalc(Calculator):
 
         self.supporting_calc = None
         self.forces_errors = []
+        forces_errors_max = []
         self.forces_errors_plot_file = forces_errors_plot_file
 
         # self.results = None
@@ -133,9 +136,11 @@ class FandeCalc(Calculator):
             a_.calc = self.supporting_calc
             supporting_forces = a_.get_forces()
             self.forces_errors.append(forces-supporting_forces)
+            self.forces_errors_max.append( np.max(np.abs(forces-supporting_forces)) )
 
 
             if self.forces_errors_plot_file is not None and len(self.forces_errors)%self.forces_errors_loginterval==0:
+                wandb.log({f"md-run/forces_errors": self.forces_errors_max})
                 self.make_forces_errors_plot(plot_show=False, plot_file=self.forces_errors_plot_file)
 
         # print("FORCES calculated!")
@@ -208,7 +213,8 @@ class FandeCalc(Calculator):
                                 titles=None,
                                 steps_range=-1, 
                                 plot_show=True, 
-                                plot_file=None, 
+                                plot_file=None,
+                                wandb_log=True, 
                                 **kwargs):
         """
         Plot forces errors.
