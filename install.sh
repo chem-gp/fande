@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 conda create -n fande -c conda-forge python gpytorch pytorch-lightning cudatoolkit=11.3.1 ase qe xtb xtb-python dftbplus plumed dscribe ipykernel matplotlib networkx gcc clang cmake
 # torch import problems with some versions of cudatoolkit
