@@ -5,6 +5,7 @@ conda create -n fande -c conda-forge -y python gpytorch pytorch-lightning cudato
 conda activate fande
 
 # building and installing librascal
+cd ..
 git clone https://github.com/lab-cosmo/librascal
 cd librascal
 mkdir build
