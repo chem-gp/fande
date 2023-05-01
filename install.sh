@@ -21,7 +21,6 @@ pip install .
 cd ..
 # git clone https://github.com/i-pi/i-pi.git
 git clone https://github.com/chem-gp/i-pi.git
-git clone 
 cd drivers/f90
 make
 cd ../..
