@@ -6,7 +6,8 @@ conda activate fande
 
 # building and installing librascal
 cd ..
-git clone https://github.com/lab-cosmo/librascal
+# git clone https://github.com/lab-cosmo/librascal
+git clone https://github.com/chem-gp/librascal.git
 cd librascal
 mkdir build
 cd build
@@ -18,7 +19,9 @@ pip install .
 # building and installing i-pi
 # https://github.com/i-pi/i-pi
 cd ..
-git clone https://github.com/i-pi/i-pi.git
+# git clone https://github.com/i-pi/i-pi.git
+git clone https://github.com/chem-gp/i-pi.git
+git clone 
 cd drivers/f90
 make
 cd ../..
