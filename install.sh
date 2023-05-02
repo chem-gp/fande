@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conda create -n fande -c conda-forge -y python gpytorch pytorch-lightning cudatoolkit=11.3.1 ase qe xtb xtb-python dftbplus plumed dscribe ipykernel matplotlib networkx gcc clang cmake gfortran
+conda create -n fande -c conda-forge -y python gpytorch pytorch-lightning cudatoolkit=11.3.1 ase qe xtb xtb-python dftbplus plumed py-plumed dscribe ipykernel matplotlib networkx gcc clang cmake gfortran
 # torch import problems with some versions of cudatoolkit
 conda activate fande
 
