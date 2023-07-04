@@ -646,11 +646,12 @@ class PredictorASE:
         for idx, pred_err in enumerate(predictions_errors):
             plt.plot( pred_err, label="Atomic group " + str(idx) )
             plt.legend()
-            plt.show()
+            plt.savefig("predictions_errors_group_" + str(idx) + ".png")
+            plt.close()
 
             plt.hist(pred_err, bins=30, label="Atomic group " + str(idx))
             plt.legend()
-            plt.show()
+            plt.savefig("hist_predictions_errors_group_" + str(idx) + ".png")
 
             print("Error metrics for atomic group ", idx)
             print("RMSE: ", np.sqrt( np.mean(pred_err**2) ) )
