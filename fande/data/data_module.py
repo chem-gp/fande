@@ -11,7 +11,7 @@ from pytorch_lightning import LightningDataModule
 
 import torch
 import numpy as np
-import sparse
+# import sparse
 
 
 try:
@@ -23,7 +23,7 @@ from fande.data import FastLoader
 
 from fande.utils import get_vectors_e, get_vectors_f
 
-from dscribe.descriptors import SOAP
+# from dscribe.descriptors import SOAP
 
 from ase import io
 from xtb.ase.calculator import XTB

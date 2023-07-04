@@ -18,7 +18,7 @@ from fande.data import FastLoader
 
 from fande.utils import get_vectors_e, get_vectors_f
 
-from dscribe.descriptors import SOAP
+# from dscribe.descriptors import SOAP
 
 from rascal.representations import SphericalInvariants
 

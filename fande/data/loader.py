@@ -9,7 +9,7 @@ from fande.plot import atom_forces_3d
 
 from xtb.ase.calculator import XTB
 
-from dscribe.descriptors import SOAP
+# from dscribe.descriptors import SOAP
 
 from tqdm import tqdm
 
