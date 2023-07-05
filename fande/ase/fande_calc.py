@@ -13,7 +13,7 @@ from ase.calculators.calculator import (
 from ase import Atoms
 
 from fande.predict import PredictorASE
-from fande.predict import SimplePredictor
+# from fande.predict import SimplePredictor
 
 from ase.neighborlist import NeighborList
 from ase.stress import full_3x3_to_voigt_6_stress

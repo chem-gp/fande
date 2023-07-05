@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from fande.compute.compute_soap import InvariantsComputer
+from fande.compute.compute_soap import InvariantsComputer # due to problems with dscribe
 
 from fande.utils import get_vectors_e, get_vectors_f
 

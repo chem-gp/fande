@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from fande.compute.compute_soap import InvariantsComputer
+# from fande.compute.compute_soap import InvariantsComputer # due to problems with dscribe
 
 from fande.utils import get_vectors_e, get_vectors_f
 
-from dscribe.descriptors import SOAP
+# from dscribe.descriptors import SOAP
 
 import torch
 import torchmetrics
@@ -28,107 +28,107 @@ from ase.visualize import view
 from fande import logger
 
 
-class SimplePredictorASE:
-    def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
+# class SimplePredictorASE:
+#     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
         
-        self.hparams = hparams
-        self.trainer_e = trainer_e
-        self.model_e = model_e
-        self.trainer_f = trainer_f
-        self.model_f = model_f
+#         self.hparams = hparams
+#         self.trainer_e = trainer_e
+#         self.model_e = model_e
+#         self.trainer_f = trainer_f
+#         self.model_f = model_f
 
-        self.soap_computer = InvariantsComputer(hparams)
+#         self.soap_computer = InvariantsComputer(hparams)
 
-        self.n_molecules = 1
-        self.n_atoms = 12
-        self.batch_size = 100_000
+#         self.n_molecules = 1
+#         self.n_atoms = 12
+#         self.batch_size = 100_000
 
-        self.soap_full = None
-
-
-
-    def predict_single_energy(self, snapshot, positions):
-
-        x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-        self.soap_full = x
-
-        x = x.view(3*self.n_atoms+1, self.n_molecules, -1).transpose(0,1)
-        x = x[:, -1, :]
-
-        y_dummy = torch.tensor( [0.0] )
-
-        test = TensorDataset(x, y_dummy)
-        test_dl = DataLoader(test, batch_size=self.batch_size)
-
-        res = self.trainer_e.predict(self.model_e, test_dl)[0]
-
-        predictions_torch = res.mean
-        variances_torch = res.variance
-
-        energy = predictions_torch.cpu().detach().numpy()
-        variance = variances_torch.cpu().detach().numpy()
-
-        return energy, variance
+#         self.soap_full = None
 
 
-    def predict_single_forces(self, snapshot, positions):
 
-        if self.soap_full is not None:
-            x = self.soap_full
-        else:
-            x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-            self.soap_full = x
+#     def predict_single_energy(self, snapshot, positions):
 
+#         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
+#         self.soap_full = x
 
-        x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
-        x = x[:,:-1, :].squeeze()
+#         x = x.view(3*self.n_atoms+1, self.n_molecules, -1).transpose(0,1)
+#         x = x[:, -1, :]
 
-        y_dummy = torch.zeros(3*self.n_atoms)
+#         y_dummy = torch.tensor( [0.0] )
 
-        test = TensorDataset(x, y_dummy)
-        test_dl = DataLoader(test, batch_size=self.batch_size)
-        res = self.trainer_f.predict(self.model_f, test_dl)[0]
+#         test = TensorDataset(x, y_dummy)
+#         test_dl = DataLoader(test, batch_size=self.batch_size)
 
-        predictions_torch = res.mean
-        variances_torch = res.variance
+#         res = self.trainer_e.predict(self.model_e, test_dl)[0]
 
-        f_ = predictions_torch.cpu().detach().numpy()
-        f_var_ = variances_torch.cpu().detach().numpy()
+#         predictions_torch = res.mean
+#         variances_torch = res.variance
 
-        return f_, f_var_
+#         energy = predictions_torch.cpu().detach().numpy()
+#         variance = variances_torch.cpu().detach().numpy()
+
+#         return energy, variance
 
 
-    # def predict_single_forces(self, snapshot, positions):
+#     def predict_single_forces(self, snapshot, positions):
 
-    #     if self.soap_full is not None:
-    #         x = self.soap_full
-    #     else:
-    #         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-    #         self.soap_full = x
+#         if self.soap_full is not None:
+#             x = self.soap_full
+#         else:
+#             x = self.soap_computer.soap_single_snapshot(snapshot, positions)
+#             self.soap_full = x
 
 
-    #     x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
-    #     x = x[:,:-1, :].squeeze()
+#         x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
+#         x = x[:,:-1, :].squeeze()
 
-    #     y_dummy = torch.zeros(3*self.n_atoms)
+#         y_dummy = torch.zeros(3*self.n_atoms)
 
-    #     test = TensorDataset(x, y_dummy)
-    #     test_dl = DataLoader(test, batch_size=self.batch_size)
-    #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
+#         test = TensorDataset(x, y_dummy)
+#         test_dl = DataLoader(test, batch_size=self.batch_size)
+#         res = self.trainer_f.predict(self.model_f, test_dl)[0]
 
-    #     predictions_torch = res.mean
-    #     variances_torch = res.variance
+#         predictions_torch = res.mean
+#         variances_torch = res.variance
 
-    #     f_ = predictions_torch.cpu().detach().numpy()
-    #     f_var_ = variances_torch.cpu().detach().numpy()
+#         f_ = predictions_torch.cpu().detach().numpy()
+#         f_var_ = variances_torch.cpu().detach().numpy()
 
-    #     return f_, f_var_
+#         return f_, f_var_
 
-    def unnormalize_energy(self):
-        ...
 
-    def unnormalize_forces(self):
-        ...
+#     # def predict_single_forces(self, snapshot, positions):
+
+#     #     if self.soap_full is not None:
+#     #         x = self.soap_full
+#     #     else:
+#     #         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
+#     #         self.soap_full = x
+
+
+#     #     x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
+#     #     x = x[:,:-1, :].squeeze()
+
+#     #     y_dummy = torch.zeros(3*self.n_atoms)
+
+#     #     test = TensorDataset(x, y_dummy)
+#     #     test_dl = DataLoader(test, batch_size=self.batch_size)
+#     #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
+
+#     #     predictions_torch = res.mean
+#     #     variances_torch = res.variance
+
+#     #     f_ = predictions_torch.cpu().detach().numpy()
+#     #     f_var_ = variances_torch.cpu().detach().numpy()
+
+#     #     return f_, f_var_
+
+#     def unnormalize_energy(self):
+#         ...
+
+#     def unnormalize_forces(self):
+#         ...
 
 
 class PredictorASE:
@@ -759,65 +759,65 @@ class PredictorASE:
 
 
 
-    def soap_single(self, snapshot):
+    # def soap_single(self, snapshot): # commented due to problems with imports in dscribe
 
-        soap_params = self.soap_params
+    #     soap_params = self.soap_params
 
-        species= soap_params['species']
-        periodic= soap_params['periodic']
-        rcut= soap_params['rcut']
-        sigma= soap_params['sigma']
-        nmax= soap_params['nmax']
-        lmax= soap_params['lmax']
-        average= soap_params['average']
-        crossover= soap_params['crossover']
-        dtype= soap_params['dtype']
-        sparse= soap_params['sparse']
-        positions = soap_params['positions']
+    #     species= soap_params['species']
+    #     periodic= soap_params['periodic']
+    #     rcut= soap_params['rcut']
+    #     sigma= soap_params['sigma']
+    #     nmax= soap_params['nmax']
+    #     lmax= soap_params['lmax']
+    #     average= soap_params['average']
+    #     crossover= soap_params['crossover']
+    #     dtype= soap_params['dtype']
+    #     sparse= soap_params['sparse']
+    #     positions = soap_params['positions']
 
-        soap = SOAP(
-            species=species,
-            periodic=periodic,
-            rcut=rcut,
-            sigma=sigma,
-            nmax=nmax,
-            lmax=lmax,
-            average=average,
-            crossover=crossover,
-            dtype=dtype,
-            sparse=sparse  
-        )
+    #     soap = SOAP(
+    #         species=species,
+    #         periodic=periodic,
+    #         rcut=rcut,
+    #         sigma=sigma,
+    #         nmax=nmax,
+    #         lmax=lmax,
+    #         average=average,
+    #         crossover=crossover,
+    #         dtype=dtype,
+    #         sparse=sparse  
+    #     )
 
-        snap = [snapshot]
+    #     snap = [snapshot]
 
-        print("Starting SOAP calculation...")
-        derivatives, descriptors = soap.derivatives(
-            snap,
-            positions=[positions] * len(snap),
-            n_jobs=1,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-        derivatives = derivatives.squeeze()
-        descriptors = descriptors.squeeze()
+    #     print("Starting SOAP calculation...")
+    #     derivatives, descriptors = soap.derivatives(
+    #         snap,
+    #         positions=[positions] * len(snap),
+    #         n_jobs=1,
+    #         # method="analytical"
+    #     )
+    #     print("SOAP calculation done!")
+    #     derivatives = derivatives.squeeze()
+    #     descriptors = descriptors.squeeze()
 
-        # print(derivatives.shape)
+    #     # print(derivatives.shape)
 
-        x = torch.tensor(descriptors)    
+    #     x = torch.tensor(descriptors)    
 
-        dx = torch.tensor(
-                derivatives.transpose(1,0,2).reshape(
-            derivatives.shape[0]*derivatives.shape[1], -1
-        ))
+    #     dx = torch.tensor(
+    #             derivatives.transpose(1,0,2).reshape(
+    #         derivatives.shape[0]*derivatives.shape[1], -1
+    #     ))
 
-        # print(dx.shape)
+    #     # print(dx.shape)
 
 
-        if self.hparams['device'] == 'gpu':
-            x = x.cuda()
-            dx = dx.cuda()
+    #     if self.hparams['device'] == 'gpu':
+    #         x = x.cuda()
+    #         dx = dx.cuda()
 
-        return x, dx
+    #     return x, dx
 
 
     def get_xtb_energy(self, atoms):
