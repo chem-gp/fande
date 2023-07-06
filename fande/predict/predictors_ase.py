@@ -652,6 +652,13 @@ class PredictorASE:
             plt.hist(pred_err, bins=30, label="Atomic group " + str(idx))
             plt.legend()
             plt.savefig("hist_predictions_errors_group_" + str(idx) + ".png")
+            plt.close()
+
+            plt.plot( self.fdm.test_F[idx].detach().cpu(), label="Test forces " + str(idx) )
+            plt.plot( predictions_torch.detach().cpu(), label="Predicted forces " + str(idx) )
+            plt.legend()
+            plt.savefig("TEST_group_" + str(idx) + ".png")
+            plt.close()
 
             print("Error metrics for atomic group ", idx)
             print("RMSE: ", np.sqrt( np.mean(pred_err**2) ) )
