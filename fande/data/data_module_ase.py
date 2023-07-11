@@ -763,11 +763,13 @@ class FandeDataModuleASE(LightningDataModule):
             total_training_random_samples = total_samples_per_group[idx]
             high_force_samples = high_force_samples_per_group[idx]
             random_samples = total_training_random_samples - high_force_samples
+            total_train_samples = self.train_F[idx].shape[0]
 
 
-            if total_training_random_samples is None or total_training_random_samples == 'all':
+            if total_training_random_samples is None or total_training_random_samples == 'all' or total_train_samples < total_training_random_samples:
                 ind_slice = np.sort( np.arange(0, self.train_F[idx].shape[0]) )
                 indices = ind_slice
+                print(f"Taking ALL {total_train_samples} samples for group {idx}")
             else:
                 ind_slice = np.sort(  np.random.choice(np.arange(0, self.train_F[idx].shape[0]), random_samples, replace=False) )
                 indices_high_force = torch.concat( 

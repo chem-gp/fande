@@ -229,7 +229,8 @@ class ModelForces(LightningModule):
         output = self.model(input_)
 
         loss = -self.mll(output, target)
-        wandb.log({f"train/loss_{self.id}": loss})
+        wandb.log({f"loss_{self.id}": loss})
+        # wandb.log({"loss": loss})
         # self.log("loss", loss, prog_bar=True, on_step=True, on_epoch=True) # unfortunately slows down the training
 
         return {'loss': loss}

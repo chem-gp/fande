@@ -600,7 +600,7 @@ class PredictorASE:
             return forces
 
 
-    def test_errors(self, plot=False, view_worst_atoms=False):
+    def test_errors(self, view_worst_atoms=False):
         """
         Provides test errors metrics for the models.
 
@@ -642,6 +642,14 @@ class PredictorASE:
             predictions_errors_idx = predictions_errors_idx.numpy()
             predictions_errors.append(predictions_errors_idx)
 
+            plt.figure(figsize=(15, 6), dpi=80)
+            plt.plot(predictions_torch.detach().cpu(), label="GP predictions group " + str(idx))
+            plt.plot(self.fdm.test_F[idx].detach().cpu(), label="true force values group " + str(idx))
+            plt.legend()
+            plt.xlim([0,100])
+            plt.savefig("predictions_vs_true_val_group_" + str(idx) + ".png")
+            plt.close()
+
 
         for idx, pred_err in enumerate(predictions_errors):
             plt.plot( pred_err, label="Atomic group " + str(idx) )
@@ -654,11 +662,11 @@ class PredictorASE:
             plt.savefig("hist_predictions_errors_group_" + str(idx) + ".png")
             plt.close()
 
-            plt.plot( self.fdm.test_F[idx].detach().cpu(), label="Test forces " + str(idx) )
-            plt.plot( predictions_torch.detach().cpu(), label="Predicted forces " + str(idx) )
-            plt.legend()
-            plt.savefig("TEST_group_" + str(idx) + ".png")
-            plt.close()
+            # plt.plot( self.fdm.test_F[idx].detach().cpu(), label="Test forces " + str(idx) )
+            # plt.plot( predictions_torch.detach().cpu(), label="Predicted forces " + str(idx) )
+            # plt.legend()
+            # plt.savefig("TEST_group_" + str(idx) + ".png")
+            # plt.close()
 
             print("Error metrics for atomic group ", idx)
             print("RMSE: ", np.sqrt( np.mean(pred_err**2) ) )
