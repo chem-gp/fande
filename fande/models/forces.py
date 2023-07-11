@@ -50,6 +50,7 @@ class SVGPModelForces(ApproximateGP):
         # self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
         self.covar_module = gpytorch.kernels.LinearKernel()
 
+
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
@@ -196,6 +197,8 @@ class ModelForces(LightningModule):
        
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
 
+        print("ModelForces initialized")
+
 
         # SVGP Approximate GP model with Variational ELBO as loss function
         # self.inducing_points = train_x[0:2:2000, :]
@@ -227,9 +230,13 @@ class ModelForces(LightningModule):
 
         loss = -self.mll(output, target)
         wandb.log({f"train/loss_{self.id}": loss})
-        # self.log("loss", loss, prog_bar=True, on_step=False, on_epoch=True) # unfortunately slows down the training
+        # self.log("loss", loss, prog_bar=True, on_step=True, on_epoch=True) # unfortunately slows down the training
 
         return {'loss': loss}
+
+    def on_train_step_end(self, outputs) -> None:
+        # loss = sum(output['loss'] for output in outputs) / len(outputs)
+        print("loss output...")
 
     # def training_step(self, batch, batch_idx):
     #     '''needs to return a loss from a single batch'''
@@ -346,7 +353,7 @@ class GroupModelForces(LightningModule):
 
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} (Total {len(self.models)} models)")
-            self.trainers[idx].fit(model, self.train_data_loaders[idx]) #, log_every_n_steps=10)
+            self.trainers[idx].fit(model, self.train_data_loaders[idx])
 
 
 
