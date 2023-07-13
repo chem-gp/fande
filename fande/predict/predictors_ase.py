@@ -643,11 +643,12 @@ class PredictorASE:
             predictions_errors.append(predictions_errors_idx)
 
             plt.figure(figsize=(15, 6), dpi=80)
+            plt.title(f"RMSE:  {np.sqrt( np.mean(  predictions_errors_idx**2) )}, Total length:{predictions_torch.shape[0]}" )
             plt.plot(predictions_torch.detach().cpu(), label="GP predictions group " + str(idx))
-            plt.plot(self.fdm.test_F[idx].detach().cpu(), label="true force values group " + str(idx))
+            plt.plot(self.fdm.test_F[idx].detach().cpu(), label="true force group " + str(idx))
             plt.legend()
-            plt.xlim([0,100])
-            plt.savefig("predictions_vs_true_val_group_" + str(idx) + ".png")
+            # plt.xlim([0,200])
+            plt.savefig("PRED_vs_TRUE_val_group_" + str(idx) + ".png")
             plt.close()
 
 
