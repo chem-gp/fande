@@ -93,15 +93,21 @@ class DKLModelForces(gpytorch.models.ExactGP):
             data_dim=soap_dim, output_dim=dkl_output_dim
         )
 
-        self.covar_module = gpytorch.kernels.GridInterpolationKernel(
-            gpytorch.kernels.ScaleKernel(
+        # self.covar_module = gpytorch.kernels.GridInterpolationKernel(
+        #     gpytorch.kernels.ScaleKernel(
+        #         gpytorch.kernels.MaternKernel(
+        #             ard_num_dims=dkl_output_dim, nu=0.5
+        #         )
+        #     ),
+        #     num_dims=dkl_output_dim,
+        #     grid_size=grid_size,
+        # )          
+
+        self.covar_module = gpytorch.kernels.ScaleKernel(
                 gpytorch.kernels.MaternKernel(
                     ard_num_dims=dkl_output_dim, nu=0.5
                 )
-            ),
-            num_dims=dkl_output_dim,
-            grid_size=grid_size,
-        )          
+            )      
 
         # self.covar_module = gpytorch.kernels.ScaleKernel(
         #     gpytorch.kernels.MaternKernel(
@@ -168,6 +174,7 @@ class ExactGPModelForces(ExactGP, LightningModule):
         # self.mean_module = ZeroMean()
         self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
         # self.covar_module = ScaleKernel( RBFKernel(ard_num_dims=self.soap_dim) )
+        # self.covar_module = ScaleKernel( RBFKernel() )
         # self.covar_module = LinearKernel()
         # self.mean_module = ConstantMean()
         self.mean_module = ZeroMean()
@@ -271,8 +278,8 @@ class ModelForces(LightningModule):
         if train_x is not None:
             self.soap_dim = train_x.shape[-1]  
         # soap_dim = train_x.shape[-1]    
-        # self.model = ExactGPModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)    
-        self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
+        self.model = ExactGPModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)    
+        # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
         self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
             self.likelihood, self.model)
         

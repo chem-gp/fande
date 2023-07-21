@@ -72,7 +72,7 @@ class FandeDataModuleASE(LightningDataModule):
 
         self.train_indices = None
 
-        self.batch_size = 1_000_000
+        self.batch_size = 100_000
 
         # if units=='hartree_bohr':
         #     print('Converting from Hartree to eV, Hartree/Bohr to eV/Angstrom')
@@ -208,7 +208,7 @@ class FandeDataModuleASE(LightningDataModule):
                         gaussian_sigma_constant=0.5,
                         gaussian_sigma_type="Constant",
                         cutoff_function_type="RadialScaling",
-                        cutoff_smooth_width=0.5,
+                        cutoff_smooth_width=0.1, # 0.1 is way better than 0.5
                         cutoff_function_parameters=
                                 dict(
                                         rate=1,
@@ -216,7 +216,7 @@ class FandeDataModuleASE(LightningDataModule):
                                         exponent=4
                                     ),
                         radial_basis="GTO",
-                        normalize=True,
+                        normalize=True, # setting False makes model untrainable
                         #   optimization=
                         #         dict(
                         #                 Spline=dict(
@@ -782,7 +782,7 @@ class FandeDataModuleASE(LightningDataModule):
             train_indices.append(indices.tolist())
 
             train_dataset = TensorDataset(self.train_DX[idx][indices], self.train_F[idx][indices])
-            train_loader = DataLoader(train_dataset, batch_size=100_000)
+            train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
             train_data_loaders.append(train_loader)
 
             print("Dataloader for group {} created".format(idx))
