@@ -661,80 +661,80 @@ class FandeDataModuleASE(LightningDataModule):
              
         return
 
-    def calculate_invariants_dscribe(self, soap_params):
+    # def calculate_invariants_dscribe(self, soap_params):
 
-        species= soap_params['species']
-        periodic= soap_params['periodic']
-        rcut= soap_params['rcut']
-        sigma= soap_params['sigma']
-        nmax= soap_params['nmax']
-        lmax= soap_params['lmax']
-        average= soap_params['average']
-        crossover= soap_params['crossover']
-        dtype= soap_params['dtype']
-        sparse= soap_params['sparse']
-        positions = soap_params['positions']
+    #     species= soap_params['species']
+    #     periodic= soap_params['periodic']
+    #     rcut= soap_params['rcut']
+    #     sigma= soap_params['sigma']
+    #     nmax= soap_params['nmax']
+    #     lmax= soap_params['lmax']
+    #     average= soap_params['average']
+    #     crossover= soap_params['crossover']
+    #     dtype= soap_params['dtype']
+    #     sparse= soap_params['sparse']
+    #     positions = soap_params['positions']
 
-        soap = SOAP(
-            species=species,
-            periodic=periodic,
-            rcut=rcut,
-            sigma=sigma,
-            nmax=nmax,
-            lmax=lmax,
-            average=average,
-            crossover=crossover,
-            dtype=dtype,
-            sparse=sparse  
-        )
+    #     soap = SOAP(
+    #         species=species,
+    #         periodic=periodic,
+    #         rcut=rcut,
+    #         sigma=sigma,
+    #         nmax=nmax,
+    #         lmax=lmax,
+    #         average=average,
+    #         crossover=crossover,
+    #         dtype=dtype,
+    #         sparse=sparse  
+    #     )
 
-        traj_train = self.traj_train
-        traj_test = self.traj_test
+    #     traj_train = self.traj_train
+    #     traj_test = self.traj_test
 
-        print(f"Total length of train traj is {len(traj_train)}")
-        print("Starting SOAP calculation...")
-        derivatives_train, descriptors_train = soap.derivatives(
-            traj_train,
-            positions=[positions] * len(traj_train),
-            n_jobs=10,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-        derivatives_train = derivatives_train.squeeze()
-        descriptors_train = descriptors_train.squeeze()
+    #     print(f"Total length of train traj is {len(traj_train)}")
+    #     print("Starting SOAP calculation...")
+    #     derivatives_train, descriptors_train = soap.derivatives(
+    #         traj_train,
+    #         positions=[positions] * len(traj_train),
+    #         n_jobs=10,
+    #         # method="analytical"
+    #     )
+    #     print("SOAP calculation done!")
+    #     derivatives_train = derivatives_train.squeeze()
+    #     descriptors_train = descriptors_train.squeeze()
 
-        print(f"Total length of test traj is {len(traj_test)}")
-        print("Starting SOAP calculation...")
-        derivatives_test, descriptors_test = soap.derivatives(
-            traj_test,
-            positions=[positions] * len(traj_test),
-            n_jobs=10,
-            # method="analytical"
-        )
-        print("SOAP calculation done!")
-        derivatives_test = derivatives_test.squeeze()
-        descriptors_test = descriptors_test.squeeze()
+    #     print(f"Total length of test traj is {len(traj_test)}")
+    #     print("Starting SOAP calculation...")
+    #     derivatives_test, descriptors_test = soap.derivatives(
+    #         traj_test,
+    #         positions=[positions] * len(traj_test),
+    #         n_jobs=10,
+    #         # method="analytical"
+    #     )
+    #     print("SOAP calculation done!")
+    #     derivatives_test = derivatives_test.squeeze()
+    #     descriptors_test = descriptors_test.squeeze()
 
 
-        self.train_X = torch.tensor(descriptors_train)      
-        self.train_DX = torch.tensor(
-                derivatives_train.transpose(2,1,0,3).reshape(
-            derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
-        ))
+    #     self.train_X = torch.tensor(descriptors_train)      
+    #     self.train_DX = torch.tensor(
+    #             derivatives_train.transpose(2,1,0,3).reshape(
+    #         derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
+    #     ))
 
-        self.test_X = torch.tensor(descriptors_test)      
-        self.test_DX = torch.tensor(
-                derivatives_test.transpose(2,1,0,3).reshape(
-            derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
-        ))
+    #     self.test_X = torch.tensor(descriptors_test)      
+    #     self.test_DX = torch.tensor(
+    #             derivatives_test.transpose(2,1,0,3).reshape(
+    #         derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
+    #     ))
 
-        print(derivatives_train.shape)
-        print(descriptors_train.shape)
+    #     print(derivatives_train.shape)
+    #     print(descriptors_train.shape)
 
-        # train_X = train_X.to(torch.float32)
-        # train_Y = train_Y.to(torch.float32)
-        # test_X = test_X.to(torch.float32)
-        # test_Y = test_Y.to(torch.float32)
+    #     # train_X = train_X.to(torch.float32)
+    #     # train_Y = train_Y.to(torch.float32)
+    #     # test_X = test_X.to(torch.float32)
+    #     # test_Y = test_Y.to(torch.float32)
 
 
     def prepare_train_data_loaders(
