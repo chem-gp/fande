@@ -86,7 +86,7 @@ class DKLModelForces(gpytorch.models.ExactGP):
         # self.mean_module = gpytorch.means.ConstantMean()
         self.mean_module = gpytorch.means.ZeroMean()
 
-        dkl_output_dim = 2
+        dkl_output_dim = 5
         grid_size = 10
 
         feature_extractor = LargeFeatureExtractor(
@@ -172,12 +172,12 @@ class ExactGPModelForces(ExactGP, LightningModule):
             self.soap_dim =soap_dim
 
         # self.mean_module = ZeroMean()
-        self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
+        self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )
         # self.covar_module = ScaleKernel( RBFKernel(ard_num_dims=self.soap_dim) )
         # self.covar_module = ScaleKernel( RBFKernel() )
         # self.covar_module = LinearKernel()
-        self.mean_module = ConstantMean()
-        # self.mean_module = ZeroMean()
+        # self.mean_module = ConstantMean()
+        self.mean_module = ZeroMean()
         # self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
         # self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
 
