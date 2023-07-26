@@ -643,7 +643,7 @@ class PredictorASE:
             predictions_errors.append(predictions_errors_idx)
 
             plt.figure(figsize=(15, 6), dpi=80)
-            plt.title(f"RMSE:  {np.sqrt( np.mean(  predictions_errors_idx**2) )}, Total length:{predictions_torch.shape[0]}" )
+            plt.title(f"RMSE:  {np.sqrt( np.mean(  predictions_errors_idx**2) )}, MAE:  {np.mean(  abs(predictions_errors_idx))}, Total length:{predictions_torch.shape[0]}" )
             plt.plot(predictions_torch.detach().cpu(), label="GP predictions group " + str(idx))
             plt.plot(self.fdm.test_F[idx].detach().cpu(), label="true force group " + str(idx))
             plt.legend()
