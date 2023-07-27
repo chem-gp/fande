@@ -189,26 +189,27 @@ class FandeDataModuleASE(LightningDataModule):
             if soap_params is None:
                 raise ValueError('soap_params must be specified when when training!')
 
-            species= soap_params['species']
-            periodic= soap_params['periodic']
-            rcut= soap_params['rcut']
-            sigma= soap_params['sigma']
-            nmax= soap_params['nmax']
-            lmax= soap_params['lmax']
-            average= soap_params['average']
-            crossover= soap_params['crossover']
-            dtype= soap_params['dtype']
-            sparse= soap_params['sparse']
-            positions = soap_params['positions']
+            # species= soap_params['species']
+            # periodic= soap_params['periodic']
+            interaction_cutoff = soap_params['interaction_cutoff']
+            gaussian_sigma_constant= soap_params['gaussian_sigma_constant']
+            max_radial= soap_params['max_radial']
+            max_angular= soap_params['max_angular']
+            cutoff_smooth_width = soap_params['cutoff_smooth_width']
+            # average= soap_params['average']
+            # crossover= soap_params['crossover']
+            # dtype= soap_params['dtype']
+            # sparse= soap_params['sparse']
+            # positions = soap_params['positions']
 
             hypers = dict(soap_type="PowerSpectrum",
-                        interaction_cutoff=rcut,
-                        max_radial=nmax,
-                        max_angular=lmax,
-                        gaussian_sigma_constant=0.5,
+                        interaction_cutoff=interaction_cutoff,
+                        max_radial=max_radial,
+                        max_angular=max_angular,
+                        gaussian_sigma_constant=gaussian_sigma_constant,
                         gaussian_sigma_type="Constant",
                         cutoff_function_type="RadialScaling",
-                        cutoff_smooth_width=0.1, # 0.1 is way better than 0.5
+                        cutoff_smooth_width=cutoff_smooth_width, # 0.1 is way better than 0.5
                         cutoff_function_parameters=
                                 dict(
                                         rate=1,

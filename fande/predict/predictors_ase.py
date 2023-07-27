@@ -623,6 +623,9 @@ class PredictorASE:
         # try to make it work with the self.ag_force_model
         predictions_errors = []
 
+        per_model_RMSE = []
+        per_model_MAE = []
+
         for idx, model in enumerate(self.ag_force_model.models):       
 
             test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
@@ -642,12 +645,18 @@ class PredictorASE:
             predictions_errors_idx = predictions_errors_idx.numpy()
             predictions_errors.append(predictions_errors_idx)
 
+            rmse = np.sqrt( np.mean(  predictions_errors_idx**2) )
+            mae = np.mean(  abs(predictions_errors_idx))
+
+            per_model_RMSE.append(rmse)
+            per_model_MAE.append(mae)
+
             plt.figure(figsize=(15, 6), dpi=80)
-            plt.title(f"RMSE:  {np.sqrt( np.mean(  predictions_errors_idx**2) )}, MAE:  {np.mean(  abs(predictions_errors_idx))}, Total length:{predictions_torch.shape[0]}" )
+            plt.title(f"RMSE:  {rmse}, MAE:  {mae}, Total length:{predictions_torch.shape[0]}" )
             plt.plot(predictions_torch.detach().cpu(), label="GP predictions group " + str(idx))
             plt.plot(self.fdm.test_F[idx].detach().cpu(), label="true force group " + str(idx))
             plt.legend()
-            # plt.xlim([0,200])
+            # plt.xlim([0,100])
             plt.savefig("PRED_vs_TRUE_val_group_" + str(idx) + ".png")
             plt.close()
 
@@ -717,6 +726,8 @@ class PredictorASE:
 
 
         # return abs_errors, worst_indices
+
+        return per_model_RMSE, per_model_MAE
 
 
     def predict_energy_single(self,snapshot):
