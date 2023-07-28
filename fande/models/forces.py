@@ -86,7 +86,7 @@ class DKLModelForces(gpytorch.models.ExactGP):
         # self.mean_module = gpytorch.means.ConstantMean()
         self.mean_module = gpytorch.means.ZeroMean()
 
-        dkl_output_dim = 5
+        dkl_output_dim = 3
         grid_size = 10
 
         feature_extractor = LargeFeatureExtractor(
@@ -456,6 +456,7 @@ class GroupModelForces(LightningModule):
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} (Total {len(self.models)} models)")
             self.trainers[idx].fit(model, self.train_data_loaders[idx])
+
 
 
 

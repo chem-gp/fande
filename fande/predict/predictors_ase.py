@@ -27,6 +27,8 @@ from ase.visualize import view
 
 from fande import logger
 
+import gpytorch
+
 
 # class SimplePredictorASE:
 #     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
@@ -168,7 +170,7 @@ class PredictorASE:
 
         self.batch_size = 1000_000
 
-        self.xtb_calc = XTB(method="GFN2-xTB")
+        # self.xtb_calc = XTB(method="GFN2-xTB")
 
     def predict_and_plot_energies(self):
 
@@ -552,13 +554,23 @@ class PredictorASE:
             return
 
 
+
     def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
             # if self.hparams["device"] == "gpu":
             #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
 
-            n_atoms = len(snapshot)
+            # print("Starting forces predictions...")
 
+            # import sys
+            # with open('predict_forces_logger.txt', 'w') as f:
+            #     sys.stdout = f # Change the standard output to the file we created.
+            #     print('Calculating invariants...')
+
+            import warnings
+            warnings.warn("Calculating invariants...")
+
+            n_atoms = len(snapshot)
             DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
             atomic_groups = self.fdm.atomic_groups_train
             # snap_DX = self.fdm.snap_DX
@@ -568,18 +580,35 @@ class PredictorASE:
             forces = np.zeros((n_atoms, 3))
             for idx, model in enumerate(self.ag_force_model.models):              
 
-                zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
+                # zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
 
-                test = TensorDataset(DX_grouped[idx], zeros_F)
-                test_dl = DataLoader(test, batch_size=self.batch_size)
-                trainer_f = self.ag_force_model.trainers[idx]
+                # test = TensorDataset(DX_grouped[idx], zeros_F)
+                # test_dl = DataLoader(test, batch_size=self.batch_size)
+                # trainer_f = self.ag_force_model.trainers[idx]
 
+
+
+                # with open('predict_forces_logger.txt', 'w') as f:
+                #     sys.stdout = f # Change the standard output to the file we created.
+                #     print(f'Starting force predictions for model {idx}')
+                warnings.warn("Predicting...")
+                # Warning('Predicting...')
+                # logger.info("Predicting...")
                 # model.eval()
-                res = trainer_f.predict(model, test_dl)[0]
+                # with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                # print(f"predicting forces for {idx} model")
 
-                predictions_torch = res.mean
+                # res = trainer_f.predict(model, test_dl)[0]
+                model = model.cuda()
+                model.eval()
+                with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                    res = model(DX_grouped[idx])
+        
+                # predictions_torch = res.mean
 
                 predictions = res.mean.cpu().detach().numpy()
+
+
 
                 # variances_torch = res.variance
                 # print(variances_torch, res.confidence_region())
@@ -634,13 +663,17 @@ class PredictorASE:
 
         for idx, model in enumerate(self.ag_force_model.models):       
 
-            test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
-            test_dl = DataLoader(test, batch_size=self.batch_size)
+            # for now doing predictions directly since lightning puts model back to CPU for some reason
+            # test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
+            # test_dl = DataLoader(test, batch_size=self.batch_size)
+            # trainer_f = self.ag_force_model.trainers[idx]
+            # model_f = self.ag_force_model.models[idx]
+            # res = trainer_f.predict(model_f, test_dl)[0]
 
-            trainer_f = self.ag_force_model.trainers[idx]
-            model_f = self.ag_force_model.models[idx]
-
-            res = trainer_f.predict(model_f, test_dl)[0]
+            model = model.cuda()
+            model.eval()
+            with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                res = model(self.fdm.test_DX[idx])
 
             predictions_torch = res.mean
 
