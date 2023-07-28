@@ -619,6 +619,12 @@ class PredictorASE:
         """
 
         logger.info("Calculating errors...")
+
+        for i in range(len(self.ag_force_model.train_data_loaders)):
+            plt.hist( self.ag_force_model.train_data_loaders[i].dataset[:][1].cpu(), label=str(i), alpha=0.7 )    
+            plt.legend()
+            plt.savefig("SELECTED_TRAINING_FORCES_" + str(i) + ".png")
+            plt.close()
         
         # try to make it work with the self.ag_force_model
         predictions_errors = []
