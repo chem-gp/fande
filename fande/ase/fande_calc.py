@@ -34,7 +34,7 @@ class FandeCalc(Calculator):
     https://gitlab.com/ase/ase/-/blob/master/ase/calculators/emt.py
     """
 
-    implemented_properties = ["energy", "forces"]
+    implemented_properties = ["energy", "forces", "forces_variance"]
     nolabel = True
 
     # default_parameters = dict(charge=0, mult=1)
@@ -126,8 +126,11 @@ class FandeCalc(Calculator):
         # forces, forces_var = self.predictor.predict_forces_single(self.atoms)
         # print("Calculating FORCES!")
 
-        forces = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
+        forces, forces_variance = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
+
         self.forces = forces
+
+        self.forces_variance = forces_variance
 
         # comparing with supporting calculation
         if self.supporting_calc is not None:
@@ -167,6 +170,7 @@ class FandeCalc(Calculator):
         self.results["energies"] = self.energies
         self.results["free_energy"] = self.energy
         self.results["forces"] = self.forces
+        self.results["forces_variance"] = self.forces_variance
 
 
         if "stress" in properties:
@@ -187,6 +191,10 @@ class FandeCalc(Calculator):
     def get_forces(self, atoms):
         self.update(atoms)
         return self.forces.copy()
+    
+    def get_forces_variance(self, atoms):
+        self.update(atoms)
+        return self.forces_variance.copy()
     
 
     def get_potential_energy(self, atoms):

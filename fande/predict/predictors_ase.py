@@ -578,6 +578,7 @@ class PredictorASE:
             # print(snap_DX)
             # predictions_grouped = []
             forces = np.zeros((n_atoms, 3))
+            forces_variance = np.zeros((n_atoms, 3))
             for idx, model in enumerate(self.ag_force_model.models):              
 
                 # zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
@@ -608,6 +609,7 @@ class PredictorASE:
 
                 predictions = res.mean.cpu().detach().numpy()
 
+                predictions_variance = res.variance.cpu().detach().numpy()
 
 
                 # variances_torch = res.variance
@@ -621,12 +623,14 @@ class PredictorASE:
                          
                 n_atoms_in_group = len(atomic_groups[idx])
                 pred_forces = predictions.reshape((n_atoms_in_group, 3))
+                pred_forces_variance = predictions_variance.reshape((n_atoms_in_group, 3))
                 # predictions_grouped.append(pred_forces)
 
                 forces[sorted(atomic_groups[idx])] = pred_forces
+                forces_variance[sorted(atomic_groups[idx])] = pred_forces_variance
             
 
-            return forces
+            return forces, forces_variance
 
 
     def test_errors(self, view_worst_atoms=False):
