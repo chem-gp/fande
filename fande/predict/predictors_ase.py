@@ -603,7 +603,7 @@ class PredictorASE:
                 model = model.cuda()
                 model.eval()
                 with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                    res = model(DX_grouped[idx])
+                    res = model(DX_grouped[idx].cuda()) # should you move to a device with specific id? for now it works...
         
                 # predictions_torch = res.mean
 
@@ -677,7 +677,7 @@ class PredictorASE:
             model = model.cuda()
             model.eval()
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                res = model(self.fdm.test_DX[idx])
+                res = model(self.fdm.test_DX[idx].cuda())
 
             predictions_torch = res.mean
 
