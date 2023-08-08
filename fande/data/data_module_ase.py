@@ -366,8 +366,8 @@ class FandeDataModuleASE(LightningDataModule):
             F_np_grouped.append( np.concatenate( F_np_batched[i][:]) )
         
         # we cannot create a single tensor for all groups, because the number of environments is different for each group
-        DX = [torch.tensor(DX_np_grouped[i], dtype=torch.float32).cuda() for i in range(n_atomic_groups)]
-        F = [torch.tensor(F_np_grouped[i], dtype=torch.float32).cuda() for i in range(n_atomic_groups)]
+        DX = [torch.tensor(DX_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
+        F = [torch.tensor(F_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
 
         if calculation_context == "train":
             self.train_DX = DX

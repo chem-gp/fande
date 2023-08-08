@@ -414,17 +414,27 @@ class GroupModelForces(LightningModule):
             train_data_loaders: list,
             fdm=None, # specification of fdm is optional
             hparams=None,
+            gpu_id=None
                  ) -> None:
         super().__init__()
 
         self.models = models
         self.train_data_loaders = train_data_loaders
 
+        if gpu_id is not None:
+            self.gpu_id = gpu_id
+
         self.trainers = []
         self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
-            trainer = Trainer(accelerator='gpu', devices=1, max_epochs=self.per_model_hparams[model.id]['num_epochs'], precision=32)
+            trainer = Trainer(
+                accelerator='gpu',
+                # devices=1, 
+                devices=[self.gpu_id], 
+                max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
+                precision=32
+                )
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
@@ -434,7 +444,7 @@ class GroupModelForces(LightningModule):
 
          #, mode="disabled")
 
-
+# https://lightning.ai/docs/pytorch/stable/common/trainer.html
 
 
     def forward(self, x):

@@ -137,8 +137,8 @@ class PredictorASE:
     def __init__(
         self,
         fdm,
-        model_e,
-        trainer_e,
+        # model_e,
+        # trainer_e,
         atomic_group_force_model,
         # model_f,
         # trainer_f,
@@ -150,11 +150,11 @@ class PredictorASE:
         self.hparams = hparams
         self.soap_params = soap_params
 
-        self.model_e = model_e
+        # self.model_e = model_e
 
         self.ag_force_model = atomic_group_force_model
 
-        self.trainer_e = trainer_e
+        # self.trainer_e = trainer_e
 
 
         self.test_X = fdm.test_X
