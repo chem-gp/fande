@@ -14,15 +14,17 @@ import os
 # from icecream import ic
 
 
-def find_atomic_groups(file_name):   
+def find_atomic_groups(snapshot):   
         """ 
         Uses method similar to described here: 
         https://mattermodeling.stackexchange.com/questions/4652/how-to-discard-molecules-at-the-boundary-in-the-atomic-simulation-environment-a
         """
 
-
-        supercell = io.read(file_name, index="0")
-        supercell.pbc = [True, True, True] # Set periodic boundary conditions
+        if isinstance(snapshot, str):
+                supercell = io.read(snapshot, index="0")
+                # supercell.pbc = [True, True, True] # Set periodic boundary conditions
+        else:
+                supercell = snapshot
 
         # Determine the indices of each molecule using neighborlists
         cutoff = neighborlist.natural_cutoffs(supercell)
@@ -113,7 +115,7 @@ def find_atomic_groups(file_name):
 
 
         # atomic_groups_list = list(s) ## THESE ARE THE AUTOMATIC ATOMIC GROUPS!!!
-        atomic_groups_list = [list(item) for item in s]
+        atomic_groups_list = [sorted(list(item)) for item in s]
 
 
 
@@ -128,5 +130,6 @@ def find_atomic_groups(file_name):
 
         print("Checking if all atoms are covered: ", concat_list == list(range(0,len(supercell))))
 
+        # atomic_groups_elements = supercell
 
         return atomic_groups_list
