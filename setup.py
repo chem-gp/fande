@@ -24,23 +24,26 @@ def find_version(*file_paths):
 readme = open("README.md").read()
 version = find_version("fande", "__init__.py")
 
-torch_min = "1.9"
-install_requires = [">=".join(["torch", torch_min]), "scikit-learn", "scipy"]
-# if recent dev version of PyTorch is installed, no need to install stable
-try:
-    import torch
+############################# Torch dependency is heavy #########################################
+# torch_min = "1.9"
+# install_requires = [">=".join(["torch", torch_min]), "scikit-learn", "scipy"]
+# # if recent dev version of PyTorch is installed, no need to install stable
+# try:
+#     import torch
 
-    if torch.__version__ >= torch_min:
-        install_requires = []
-except ImportError:
-    pass
+#     if torch.__version__ >= torch_min:
+#         install_requires = []
+# except ImportError:
+#     pass
+#################################################################################################
+install_requires = ["scikit-learn", "scipy"]
 
 
 # Run the setup
 setup(
     name="fande",
     version=version,
-    description="Scalable molecular Energy and Force fitting with Gaussian Processes",
+    description="Molecular Energy and Force fitting with scalable Gaussian Processes",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Mikhail Tsitsvero",
