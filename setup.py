@@ -36,7 +36,7 @@ version = find_version("fande", "__init__.py")
 # except ImportError:
 #     pass
 #################################################################################################
-install_requires = ["scikit-learn", "scipy"]
+install_requires = ["numpy"]
 
 
 # Run the setup

@@ -56,7 +56,7 @@ Theory on barrier crossings is similar to the one [given here](https://arxiv.org
 
 ## Install
 
-Currently we provide install through [conda]() and for Linux distributions
+Currently we provide install through [conda]()
 
 1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html)
 
@@ -81,3 +81,9 @@ pip install -e ../fande
 7. All should work, you can run [examples]([https://github.com/chem-gp/examples](https://github.com/chem-gp/examples/tree/main/fande-examples))!
 
 
+
+Install by pip:
+```
+pip instal git+https://github.com/chem-gp/fande
+pip instal git+https://github.com/chem-gp/fande --upgrade
+```

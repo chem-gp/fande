@@ -84,14 +84,15 @@ def find_atomic_groups(snapshot):
                 connmat2.sum(axis=-1), 
                 connmat3.sum(axis=-1), 
                 connmat4.sum(axis=-1), 
-                connmat5.sum(axis=-1),
-                connmat6.sum(axis=-1),
-                connmat7.sum(axis=-1), 
-                connmat8.sum(axis=-1),
-                connmat9.sum(axis=-1), 
-                connmat10.sum(axis=-1), 
+                # connmat5.sum(axis=-1),
+                # connmat6.sum(axis=-1),
+                # connmat7.sum(axis=-1), 
+                # connmat8.sum(axis=-1),
+                # connmat9.sum(axis=-1), 
+                # connmat10.sum(axis=-1), 
                         )))#, dtype=np.int32)
 
+        # print(feature_vector)
 
 
         atomic_groups = []
