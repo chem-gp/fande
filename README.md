@@ -84,6 +84,6 @@ pip install -e ../fande
 
 Install by pip:
 ```
-pip instal git+https://github.com/chem-gp/fande
-pip instal git+https://github.com/chem-gp/fande --upgrade
+pip install git+https://github.com/chem-gp/fande
+pip install git+https://github.com/chem-gp/fande --force-reinstall
 ```
