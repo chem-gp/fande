@@ -257,14 +257,31 @@ class FandeCalc(Calculator):
 
 
         def save_predictor(self, file_name=None):
+            """
+            Save the predictor to file. Everything is saved, including the model, the trainer, the hparams, and descriptors. 
+            Huge file is generated.
+
+            Sample loading of predictor:
+            ``` python
+            import torch
+            from fande.ase import FandeCalc
+
+            predictor_loaded = torch.load("/data1/simulations/ML_models/predictor.pt")
+            fande_calc = FandeCalc(predictor_loaded)
+
+            atoms = predictor_loaded.fdm.traj_train[0].copy()
+            atoms.calc = fande_calc
+
+            print( atoms.get_potential_energy(), atoms.get_forces() )
+            ```
+
+            """
             if file_name is None:
-                raise Warning("Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
+                raise Warning("Please provide filename. Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
             torch.save(self.predictor)
             return
 
-        def load_predictor(self, file_name=None):
-            self.predictor = torch.load(file_name)
-            return
+
 
 
     # def get_xtb_energy(self, atoms=None):
