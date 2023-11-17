@@ -25,6 +25,7 @@ from xtb.ase.calculator import XTB
 
 import wandb
 
+import torch
 
 class FandeCalc(Calculator):
     """See for example:
@@ -253,6 +254,18 @@ class FandeCalc(Calculator):
 
 
         return 
+
+
+        def save_predictor(self, file_name=None):
+            if file_name is None:
+                raise Warning("Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
+            torch.save(self.predictor)
+            return
+
+        def load_predictor(self, file_name=None):
+            self.predictor = torch.load(file_name)
+            return
+
 
     # def get_xtb_energy(self, atoms=None):
 
