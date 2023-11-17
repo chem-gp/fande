@@ -2,6 +2,8 @@ from ase import neighborlist
 
 from ase import io
 
+import numpy as np
+
 def make_whole_molecules(atoms_orig, molecules_seeds, N_random_attempts=3):
         """
         Make the whole molecules by translating atoms across the boundary.
@@ -14,6 +16,8 @@ def make_whole_molecules(atoms_orig, molecules_seeds, N_random_attempts=3):
 
         """
 
+        global R, good_boys, connmat, atoms
+
         if isinstance(atoms_orig, str):
                 atoms = io.read(atoms_orig).copy()
         else:
@@ -24,12 +28,14 @@ def make_whole_molecules(atoms_orig, molecules_seeds, N_random_attempts=3):
         nl = neighborlist.build_neighbor_list(atoms, cutoffs=cutoff, bothways=True)
         connmat = nl.get_connectivity_matrix(False) # Connectivity matrix
 
+
         R = 0 # maximum number of recursive iterations (to limit execution time)
         for iteration in range(N_random_attempts):
                 good_boys = []
                 for k in molecules_seeds:
                         check_neighbors_and_translate(k)
 
+        del R, good_boys, connmat
 
         return atoms
 
@@ -41,7 +47,7 @@ def check_neighbors_and_translate(a):
         a: index of atom from where the search of neighbors starts
         NOTE: adjust the cutoff values of 3.0 to your needs based on the lattice size and types of bonds in your system
         """
-        global R, good_boys
+        global R, good_boys, connmat
 
         good_boys.append(a)
 
