@@ -276,7 +276,7 @@ class FandeCalc(Calculator):
         ```
 
         """
-        raise Warning("Please provide filename. Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
+        print("Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
         torch.save(self.predictor, file_name)
         return
 
