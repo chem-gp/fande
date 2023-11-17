@@ -11,10 +11,10 @@ data/dump.tar.gz
 data/dump.zip
 
 wandb/
-fande/plot/__pycache__/__init__.cpython-39.pyc
-fande/plot/__pycache__/forces.cpython-39.pyc
+fande/plot/__pycache__/*
 
-MNIST/
+
+
 lightning_logs/
 fande/data/__pycache__/
 fande/data/__pycache__/
@@ -34,14 +34,13 @@ fande/ase/__pycache__/
 
 
 conda-out/
-fande/explore/__pycache__/
+fande/explore/__pycache__/*
 
 
 
 
 
 _build
-fande_updated.tar.gz
 fande/plot/__pycache__/
 fande/plot/__pycache__/
 .ipynb_checkpoints/*
