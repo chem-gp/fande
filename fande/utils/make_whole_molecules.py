@@ -1,3 +1,12 @@
+
+# Example:
+# from fande.utils.make_whole_molecules import make_whole_molecules
+# res_atoms = make_whole_molecules("path_to_cif.cif"/Atoms Ojbect, [0,1,2,3,4,5])
+# from ase.visualize import view
+# view(res_atoms)
+
+
+
 from ase import neighborlist
 
 from ase import io
