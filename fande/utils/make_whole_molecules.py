@@ -1,5 +1,7 @@
 from ase import neighborlist
 
+from ase import io
+
 def make_whole_molecules(atoms_orig, molecules_seeds, N_random_attempts=3):
         """
         Make the whole molecules by translating atoms across the boundary.
@@ -9,7 +11,7 @@ def make_whole_molecules(atoms_orig, molecules_seeds, N_random_attempts=3):
         atoms_orig: Atoms object or path to xyz file
         molecules_seeds: list of indices of atoms that building of molecules is started from (they will not be translated)
         N_random_attempts: number of random attempts to translate atoms to the center of molecules (to limit execution time)
-        
+
         """
 
         if isinstance(atoms_orig, str):
