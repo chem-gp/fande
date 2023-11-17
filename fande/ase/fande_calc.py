@@ -256,7 +256,7 @@ class FandeCalc(Calculator):
         return 
 
 
-    def save_predictor(self, file_name=None):
+    def save_predictor(self, file_name):
         """
         Save the predictor to file. Everything is saved, including the model, the trainer, the hparams, and descriptors. 
         Huge file is generated.
@@ -276,8 +276,7 @@ class FandeCalc(Calculator):
         ```
 
         """
-        if file_name is None:
-            raise Warning("Please provide filename. Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
+        raise Warning("Please provide filename. Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
         torch.save(self.predictor)
         return
 
