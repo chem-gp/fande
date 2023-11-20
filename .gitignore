@@ -45,3 +45,4 @@ fande/plot/__pycache__/
 fande/plot/__pycache__/
 .ipynb_checkpoints/*
 build/*
+fande/ipi/__pycache__/
