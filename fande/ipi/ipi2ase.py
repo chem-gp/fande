@@ -3,6 +3,7 @@
 
 import numpy as np                                                                                                                                                                                  
 from ase.io import read,write  
+from tqdm import tqdm
 
 
 def ipi2ase(infile, outfile=None, format='extxyz', index=':', **kwargs):
@@ -21,12 +22,13 @@ def ipi2ase(infile, outfile=None, format='extxyz', index=':', **kwargs):
                                 cells.append(c) 
 
         print("Cells info has been read.")
-        for ifrm,frm in enumerate(traj): 
+        for ifrm,frm in tqdm(enumerate(traj)): 
                 frm.set_pbc(True) 
                 cell = cells[ifrm] 
                 frm.set_cell(cell) 
                 pos = frm.get_scaled_positions() 
-                write(outfile, traj, format=format)
+                
+        write(outfile, traj, format=format)
 
         print("Output file has been written.")
 

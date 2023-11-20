@@ -7,19 +7,19 @@ import matplotlib.pyplot as plt
 
 import os
 
-from icecream import ic
+# from icecream import ic
 
 import sys
 from tqdm import tqdm
 
 
 
-# def output_to_file(text):
-#         """
-#         Write text to file
-#         """
-#         with open("debug_log.log", "a") as f:
-#                 f.write(text + "\n")
+def output_to_file(text):
+        """
+        Write text to file
+        """
+        with open("output.log", "a") as f:
+                f.write(text + "\n")
 
 
 def make_test_plots(fande_calc, test_trajectory, save_dir):
@@ -62,6 +62,7 @@ def make_test_plots(fande_calc, test_trajectory, save_dir):
 
 
         os.makedirs(save_dir, exist_ok=True)
+        os.chdir(save_dir)
 
         atomic_groups = fande_calc.predictor.fdm.atomic_groups
 
@@ -73,23 +74,22 @@ def make_test_plots(fande_calc, test_trajectory, save_dir):
                 mean_abs_ag_error = np.mean(np.abs(errors_ag))
                 mse_ag_error = np.mean(errors_ag**2)
 
-                ic("Atomic group: ", ag)
-                ic( atomic_groups[ag])
-                ic(max_abs_ag_error)
-                ic(mean_abs_ag_error)
-                ic(mse_ag_error)
+                output_to_file("Atomic group: " + str(ag))
+                # output_to_file( atomic_groups[ag])
+                # output_to_file(max_abs_ag_error)
+                # output_to_file(mean_abs_ag_error)
+                # output_to_file(mse_ag_error)
 
-                print("Atomic group " + str(ag) + ", max. abs. error: " + str(max_abs_ag_error))
-                print("Atomic group " + str(ag) + ", mean abs. error: " + str(mean_abs_ag_error))
-                print("Atomic group " + str(ag) + ", MSE: " + str(mse_ag_error))
+                output_to_file("Atomic group " + str(ag) + ", Max. abs. error: " + str(max_abs_ag_error))
+                output_to_file("Atomic group " + str(ag) + ", Mean abs. error: " + str(mean_abs_ag_error))
+                output_to_file("Atomic group " + str(ag) + ", MSE: " + str(mse_ag_error))
 
                 plt.title("Atomic group " + str(ag) + ", max. abs. error: " + str(max_abs_ag_error))
 
                 
-
-                plt.hist(errors_ag[:,0].flatten(), bins=100, label="x")
-                plt.hist(errors_ag[:,1].flatten(), bins=100, label="y")
-                plt.hist(errors_ag[:,2].flatten(), bins=100, label="z")
+                plt.hist(errors_ag[:,0].flatten(), bins=20, label="x", alpha=0.5)
+                plt.hist(errors_ag[:,1].flatten(), bins=20, label="y", alpha=0.5)
+                plt.hist(errors_ag[:,2].flatten(), bins=20, label="z", alpha=0.5)
                 plt.legend()
                 plt.savefig(save_dir + "/histogram_ag_" + str(ag) + ".png")
                 plt.close()
@@ -107,13 +107,13 @@ def make_test_plots(fande_calc, test_trajectory, save_dir):
 
                 axs[0].plot(f[:,ind,0], label="Test")
                 axs[0].plot(f_fande[:,ind,0], label="FANDE-ML", linestyle=":")
-                
+                plt.legend()
                 axs[1].plot(f[:,ind,1], label="Test")
                 axs[1].plot(f_fande[:,ind,1], label="FANDE-ML", linestyle=":")
-                
+                plt.legend()
                 axs[2].plot(f[:,ind,2], label="Test")
                 axs[2].plot(f_fande[:,ind,2], label="FANDE-ML", linestyle=":")
-
+                plt.legend()
                 axs[3].plot(error[:,ind,0], label="Error")
                 axs[3].plot(f_fande_uncertainty[:,ind,0], label="Uncertainty", linestyle="--")
                 plt.legend()
