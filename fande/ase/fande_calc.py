@@ -291,7 +291,31 @@ class FandeCalc(Calculator):
         # free up memory to make the artifact smaller
         try:
             del self.predictor.fdm.train_DX, self.predictor.fdm.train_F, self.predictor.fdm.test_DX, self.predictor.fdm.test_F
+        except:
+            pass
+
+        try:
             del self.predictor.fdm.train_X, self.predictor.fdm.train_E, self.predictor.fdm.test_X, self.predictor.fdm.test_E
+        except:
+            pass
+
+        try:
+            del self.train_DX, self.train_F, self.test_DX, self.test_F
+        except:
+            pass
+
+        try:
+            del self.train_X, self.train_E, self.test_X, self.test_E
+        except:
+            pass
+
+        try:
+            del self.test_X, self.test_E
+        except:
+            pass
+
+        try:
+            del self.test_DX, self.test_F
         except:
             pass
 
