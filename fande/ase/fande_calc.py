@@ -277,6 +277,24 @@ class FandeCalc(Calculator):
 
         """
         print("Saving predictor requires humongous amount of memory! Spare some dozens of GBs!")
+        # self.predictor.fdm: 
+        # self.train_DX = None
+        # self.train_F = None
+        # self.test_DX = None
+        # self.test_F = None
+
+        # self.train_X = None
+        # self.train_E = None
+        # self.test_X = None
+        # self.test_E = None
+
+        # free up memory to make the artifact smaller
+        try:
+            del self.predictor.fdm.train_DX, self.predictor.fdm.train_F, self.predictor.fdm.test_DX, self.predictor.fdm.test_F
+            del self.predictor.fdm.train_X, self.predictor.fdm.train_E, self.predictor.fdm.test_X, self.predictor.fdm.test_E
+        except:
+            pass
+
         torch.save(self.predictor, file_name)
         return
 
