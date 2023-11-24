@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Title &mdash; Fande 0.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=7026087e"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Fande
+          </a>
+              <div class="version">
+                0.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Title</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_modules.html">Title</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Fande</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Title</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/calculators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-fande.ase">
+<span id="title"></span><h1>Title<a class="headerlink" href="#module-fande.ase" title="Link to this heading"></a></h1>
+<section id="standard-calculators">
+<h2>Standard Calculators<a class="headerlink" href="#standard-calculators" title="Link to this heading"></a></h2>
+<section id="fandecalc">
+<h3><span class="hidden-section">FandeCalc</span><a class="headerlink" href="#fandecalc" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="fande.ase.FandeCalc">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fande.ase.</span></span><span class="sig-name descname"><span class="pre">FandeCalc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fande.ase.FandeCalc" title="Link to this definition"></a></dt>
+<dd><p>See for example:
+Calculator to be used with Atomic Simulation Environment.</p>
+<p>See example calculator:
+<a class="reference external" href="https://gitlab.com/ase/ase/-/blob/master/ase/calculators/emt.py">https://gitlab.com/ase/ase/-/blob/master/ase/calculators/emt.py</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fande.ase.FandeCalc.make_forces_errors_plot">
+<span class="sig-name descname"><span class="pre">make_forces_errors_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fande.ase.FandeCalc.make_forces_errors_plot" title="Link to this definition"></a></dt>
+<dd><p>Plot forces errors.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fande.ase.FandeCalc.save_predictor">
+<span class="sig-name descname"><span class="pre">save_predictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fande.ase.FandeCalc.save_predictor" title="Link to this definition"></a></dt>
+<dd><p>Save the predictor to file. Everything is saved, including the model, the trainer, the hparams, and descriptors. 
+Huge file is generated.</p>
+<p>Sample loading of predictor:
+<a href="#id1"><span class="problematic" id="id2">``</span></a>` python
+import torch
+from fande.ase import FandeCalc</p>
+<p>predictor_loaded = torch.load(“/data1/simulations/ML_models/predictor.pt”)
+fande_calc = FandeCalc(predictor_loaded)</p>
+<p>atoms = predictor_loaded.fdm.traj_train[0].copy()
+atoms.calc = fande_calc</p>
+<p>print( atoms.get_potential_energy(), atoms.get_forces() )
+<a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Mikhail Tsitsvero.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
