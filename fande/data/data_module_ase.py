@@ -1,9 +1,9 @@
 # https://pytorch-lightning.readthedocs.io/en/latest/starter/introduction_guide.html#datamodules-recommended
-from tkinter import NO
+# from tkinter import NO
 from torch.utils.data import DataLoader
 import os
 import subprocess
-from datetime import datetime
+# from datetime import datetime
 
 from typing import Optional
 from pytorch_lightning import LightningDataModule
@@ -14,25 +14,19 @@ import torch
 import numpy as np
 
 
-from fande.data import FastLoader
-
-from fande.utils import get_vectors_e, get_vectors_f
-
+# from fande.data import FastLoader
+# from fande.utils import get_vectors_e, get_vectors_f
 # from dscribe.descriptors import SOAP
 
 from rascal.representations import SphericalInvariants
 
 import ase
 from ase import io
-
 from tqdm import tqdm
 
-from ase.units import Bohr, Hartree
-
-from ase.visualize import view
-
-
-from functools import lru_cache
+# from ase.units import Bohr, Hartree
+# from ase.visualize import view
+# from functools import lru_cache
 
 import math
 
@@ -73,44 +67,6 @@ class FandeDataModuleASE(LightningDataModule):
         self.train_indices = None
 
         self.batch_size = 100_000
-
-        # if units=='hartree_bohr':
-        #     print('Converting from Hartree to eV, Hartree/Bohr to eV/Angstrom')
-        #     self.energies_train = self.energies_train * Hartree
-        #     self.energies_test = self.energies_test * Hartree
-        #     self.forces_train = self.forces_train * Hartree / Bohr
-        #     self.forces_test = self.forces_test * Hartree / Bohr
-
-
-        # self.normalizing_factor = np.max(self.energies_train) - np.min(self.energies_train)
-
-        # forces_train_norm = self.forces_train / self.normalizing_factor
-        # energies_train_norm = (self.energies_train - np.min(self.energies_train)) / self.normalizing_factor
-
-        # forces_test_norm = self.forces_test / self.normalizing_factor
-        # energies_test_norm = (self.energies_test - np.min(self.energies_train)) / self.normalizing_factor
-
-        # self.forces_train_norm = forces_train_norm
-        # self.forces_test_norm = forces_test_norm
-
-        # forces_train_norm = forces_train_norm.transpose(2,1,0).reshape(
-        #     forces_train_norm.shape[0] * forces_train_norm.shape[1] * forces_train_norm.shape[2], -1
-        #     ).astype(np.float64)
-
-        # forces_test_norm = forces_test_norm.transpose(2,1,0).reshape(
-        #     forces_test_norm.shape[0] * forces_test_norm.shape[1] * forces_test_norm.shape[2], -1
-        #     ).astype(np.float64)
-
-
-        # self.train_E = torch.tensor( energies_train_norm )
-        # self.test_E = torch.tensor( energies_test_norm )
-        # self.train_F = torch.tensor( forces_train_norm )
-        # self.test_F = torch.tensor( forces_test_norm )
-
-
-        # self.train_F = self.train_F[:, :].squeeze()
-        # self.test_F = self.test_F[:, :].squeeze()
-
 
 
 
@@ -382,7 +338,6 @@ class FandeDataModuleASE(LightningDataModule):
         else:
             return
 
-    
 
 
     def prepare_batches(
@@ -498,131 +453,131 @@ class FandeDataModuleASE(LightningDataModule):
         return snap_DX
 
 
+# pending for deletion
+    # def get_training_data(self, n_atoms=None):
+    #     """
+    #     return training snapshots, energies and forces
+    #     """
+    #     # check this method!
 
-    def get_training_data(self, n_atoms=None):
-        """
-        return training snapshots, energies and forces
-        """
-        # check this method!
+    #     training_snapshots = self.mol_traj[0:1600]
+    #     # tensor_Y = self.train_Y
+    #     # tensor_Y = tensor_Y.view(3*n_atoms+1,-1).transpose(0,1)
 
-        training_snapshots = self.mol_traj[0:1600]
-        # tensor_Y = self.train_Y
-        # tensor_Y = tensor_Y.view(3*n_atoms+1,-1).transpose(0,1)
+    #     # training_forces = tensor_Y[:,:-1].squeeze()
+    #     # training_energies = tensor_Y[:,-1].squeeze()
+    #     # training_forces = training_forces.reshape(-1, n_atoms, 3)
 
-        # training_forces = tensor_Y[:,:-1].squeeze()
-        # training_energies = tensor_Y[:,-1].squeeze()
-        # training_forces = training_forces.reshape(-1, n_atoms, 3)
+    #     print( self.forces_energies.shape )
 
-        print( self.forces_energies.shape )
-
-        return training_snapshots, training_energies, training_forces
-
-
+    #     return training_snapshots, training_energies, training_forces
 
 
-    def prepare_torch_dataset(self, energies, forces, descriptors, derivatives):
-        """
-        Prepare train/test datasets from raw computed energies/descriptors and forces/derivatives.
-        """
-        self.n_atoms = forces.shape[1]
 
-        r_test = 0.2
-        r_train = 1 - r_test
+# Pending for deletion...
+    # def prepare_torch_dataset(self, energies, forces, descriptors, derivatives):
+    #     """
+    #     Prepare train/test datasets from raw computed energies/descriptors and forces/derivatives.
+    #     """
+    #     self.n_atoms = forces.shape[1]
 
-        n_samples = energies.shape[0]
+    #     r_test = 0.2
+    #     r_train = 1 - r_test
 
-
-        n_train = int(r_train * n_samples)
-        n_test = n_samples - n_train
-
-        self.n_train_structures = n_train
-        self.n_test_structures = n_test
-
-        energies_train = energies[0:n_train]
-        forces_train = forces[0:n_train]
-
-        self.normalizing_const = np.max(energies_train) - np.min(energies_train)
-        self.normalizing_shift = np.min(energies_train)
-
-        forces = forces / self.normalizing_const
-        energies = ( energies - self.normalizing_shift ) / self.normalizing_const
-        self.forces_norm = forces
-        self.energies_norm = energies
+    #     n_samples = energies.shape[0]
 
 
-        energies_train = energies[0:n_train]
-        forces_train = forces[0:n_train]
-        energies_test = energies[n_train:-1]
-        forces_test = energies[n_train:-1]
+    #     n_train = int(r_train * n_samples)
+    #     n_test = n_samples - n_train
 
-        derivatives_flattened = derivatives.reshape(
-            derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
-        )
-        descriptors_expanded = np.expand_dims(descriptors, 2)
+    #     self.n_train_structures = n_train
+    #     self.n_test_structures = n_test
 
-        derivatives_descriptors = np.concatenate(
-            (derivatives_flattened, descriptors_expanded), axis=2
-        )
+    #     energies_train = energies[0:n_train]
+    #     forces_train = forces[0:n_train]
 
-        derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
+    #     self.normalizing_const = np.max(energies_train) - np.min(energies_train)
+    #     self.normalizing_shift = np.min(energies_train)
+
+    #     forces = forces / self.normalizing_const
+    #     energies = ( energies - self.normalizing_shift ) / self.normalizing_const
+    #     self.forces_norm = forces
+    #     self.energies_norm = energies
+
+
+    #     energies_train = energies[0:n_train]
+    #     forces_train = forces[0:n_train]
+    #     energies_test = energies[n_train:-1]
+    #     forces_test = energies[n_train:-1]
+
+    #     derivatives_flattened = derivatives.reshape(
+    #         derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
+    #     )
+    #     descriptors_expanded = np.expand_dims(descriptors, 2)
+
+    #     derivatives_descriptors = np.concatenate(
+    #         (derivatives_flattened, descriptors_expanded), axis=2
+    #     )
+
+    #     derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
         
-        forces_energies = np.concatenate(
-            (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
-        ).astype(np.float64)
+    #     forces_energies = np.concatenate(
+    #         (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
+    #     ).astype(np.float64)
 
-        derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
-        forces_energies_torch = torch.tensor(forces_energies)
-
-
-        train_X = derivatives_descriptors_torch[0 : n_train, :, :]
-        train_Y = forces_energies_torch[0 : n_train, :]
+    #     derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
+    #     forces_energies_torch = torch.tensor(forces_energies)
 
 
-        test_X = derivatives_descriptors_torch[
-            n_train : n_samples, :, :
-        ]
-        test_Y = forces_energies_torch[n_train : n_samples, :]
-
-        test_energies_torch = test_Y[:, -1]
-        test_forces_torch = test_Y[:, :-1].reshape(-1, 3, self.n_atoms)
-
-        self.test_shape = test_Y.shape
-        self.train_shape = train_Y.shape
-
-        train_X = train_X[:, :, :].transpose(0, 1).flatten(0, 1)
-        train_Y = train_Y[:, :].transpose(0, 1).flatten(0, 1)
-
-        test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
-        test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
+    #     train_X = derivatives_descriptors_torch[0 : n_train, :, :]
+    #     train_Y = forces_energies_torch[0 : n_train, :]
 
 
-        print("Train set")
-        print("Shape: ", train_X.shape, train_Y.shape)
-        print("Type: ", train_X.dtype, train_Y.dtype)
-        print("Device: ", train_X.device, train_Y.device)
+    #     test_X = derivatives_descriptors_torch[
+    #         n_train : n_samples, :, :
+    #     ]
+    #     test_Y = forces_energies_torch[n_train : n_samples, :]
 
-        print("\nTest set")
-        print("Shape: ", test_X.shape, test_Y.shape)
-        print("Type: ", test_X.dtype, test_Y.dtype)
-        print("Device: ", test_X.device, test_Y.device)
+    #     test_energies_torch = test_Y[:, -1]
+    #     test_forces_torch = test_Y[:, :-1].reshape(-1, 3, self.n_atoms)
 
-        train_X = train_X.to(torch.float32)
-        train_Y = train_Y.to(torch.float32)
-        test_X = test_X.to(torch.float32)
-        test_Y = test_Y.to(torch.float32)
+    #     self.test_shape = test_Y.shape
+    #     self.train_shape = train_Y.shape
 
-        self.train_X = train_X
-        self.train_Y = train_Y
-        self.test_X = test_X
-        self.test_Y = test_Y
+    #     train_X = train_X[:, :, :].transpose(0, 1).flatten(0, 1)
+    #     train_Y = train_Y[:, :].transpose(0, 1).flatten(0, 1)
 
-        self.train_X_e = train_X[-n_train:]
-        self.train_Y_e = train_Y[-n_train:]
-        self.test_X_e = test_X[-n_test:]
-        self.test_Y_e = test_Y[-n_test:]
+    #     test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
+    #     test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
 
 
-        return
+    #     print("Train set")
+    #     print("Shape: ", train_X.shape, train_Y.shape)
+    #     print("Type: ", train_X.dtype, train_Y.dtype)
+    #     print("Device: ", train_X.device, train_Y.device)
+
+    #     print("\nTest set")
+    #     print("Shape: ", test_X.shape, test_Y.shape)
+    #     print("Type: ", test_X.dtype, test_Y.dtype)
+    #     print("Device: ", test_X.device, test_Y.device)
+
+    #     train_X = train_X.to(torch.float32)
+    #     train_Y = train_Y.to(torch.float32)
+    #     test_X = test_X.to(torch.float32)
+    #     test_Y = test_Y.to(torch.float32)
+
+    #     self.train_X = train_X
+    #     self.train_Y = train_Y
+    #     self.test_X = test_X
+    #     self.test_Y = test_Y
+
+    #     self.train_X_e = train_X[-n_train:]
+    #     self.train_Y_e = train_Y[-n_train:]
+    #     self.test_X_e = test_X[-n_test:]
+    #     self.test_Y_e = test_Y[-n_test:]
+
+
+    #     return
 
     def randomly_rotate(self, traj_initial, forces):
         print("Randomly rotating training configuration and forces...")
@@ -651,16 +606,6 @@ class FandeDataModuleASE(LightningDataModule):
 
         return traj, forces_rotated
 
-
-    def view_traj(self):
-
-        print("Train+test trajectories:")
-        print(f"First {len(self.traj_train)} frames is traning traj, remaining is test traj")
-
-        view(self.traj_train)
-        view(self.traj_test)
-             
-        return
 
     # def calculate_invariants_dscribe(self, soap_params):
 
@@ -743,12 +688,15 @@ class FandeDataModuleASE(LightningDataModule):
             total_samples_per_group, 
             high_force_samples_per_group):
         """
-        Prepare data loaders for training. Currently data loaders are created within the FandeDataModule class and then passed to the group medel classes.
+        Prepare data loaders for training. Currently data loaders are created within the FandeDataModule class and then passed to the group model classes.
 
         Parameters
         ----------
         samples_per_group : list of int
             Number of training random samples to use for each group. If None, all samples are used.
+        
+        high_force_samples_per_group : list of int
+            Number of high force samples to be included for each group. `high_force_samples_per_group` of the tighest (positive) and lowest (negative) forces are selected.
 
         Returns
         -------
