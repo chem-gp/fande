@@ -772,11 +772,14 @@ class FandeDataModuleASE(LightningDataModule):
                 indices = ind_slice
                 print(f"Taking ALL {total_train_samples} samples for group {idx}")
             else:
-                ind_slice = np.sort(  np.random.choice(np.arange(0, self.train_F[idx].shape[0]), random_samples, replace=False) )
                 indices_high_force = torch.concat( 
                     (torch.topk(self.train_F[idx], high_force_samples//2, largest=True)[1],  
-                    torch.topk(self.train_F[idx], high_force_samples//2, largest=False)[1]) ).cpu().numpy() 
+                    torch.topk(self.train_F[idx], high_force_samples//2, largest=False)[1]) ).cpu().numpy()
 
+                indices_without_high_force = np.setdiff1d(  np.arange(0, train_F[idx].shape[0]), indices_high_force    )
+
+                ind_slice = np.sort(  np.random.choice(indices_without_high_force, random_samples, replace=False) )
+ 
                 indices = np.concatenate((ind_slice, indices_high_force))
                 indices = np.unique(indices)
 
