@@ -776,7 +776,7 @@ class FandeDataModuleASE(LightningDataModule):
                     (torch.topk(self.train_F[idx], high_force_samples//2, largest=True)[1],  
                     torch.topk(self.train_F[idx], high_force_samples//2, largest=False)[1]) ).cpu().numpy()
 
-                indices_without_high_force = np.setdiff1d(  np.arange(0, train_F[idx].shape[0]), indices_high_force    )
+                indices_without_high_force = np.setdiff1d(  np.arange(0, self.train_F[idx].shape[0]), indices_high_force    )
 
                 ind_slice = np.sort(  np.random.choice(indices_without_high_force, random_samples, replace=False) )
  
