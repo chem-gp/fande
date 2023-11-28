@@ -40,8 +40,11 @@ class FandeDataModuleASE(LightningDataModule):
         self.hparams.update(hparams)
 
         self.traj_train = training_data['trajectory']
-        self.energies_train = training_data['energies']
         self.forces_train = training_data['forces']
+
+        self.energies_train = training_data['energies']
+        self.trajectory_eneriges_train = training_data['trajectory_energies']
+        
 
         # self.traj_train, self.forces_train = self.randomly_rotate(self.traj_train, self.forces_train)
 
@@ -99,8 +102,6 @@ class FandeDataModuleASE(LightningDataModule):
             self,
             trajectory, 
             soap_params,
-            atomic_groups = None, 
-            centers_positions=None, 
             frames_per_batch=10): 
         """
         Calculate SOAP invariants without derivatives using librascal.
@@ -165,7 +166,7 @@ class FandeDataModuleASE(LightningDataModule):
    
         soap = SphericalInvariants(**hypers)
 
-        # DX_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]  
+        X_np_batched = []  
         # F_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
         # grad_info_sub_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
 
@@ -176,8 +177,9 @@ class FandeDataModuleASE(LightningDataModule):
 
             managers = soap.transform(traj_b)
             soap_array = managers.get_features(soap)
+            X_np_batched.append(soap_array)
 
-        X = torch.tensor(soap_array,dtype=torch.float32)
+        X = torch.tensor(X_np_batched,dtype=torch.float32)
 
 
         return X
