@@ -95,6 +95,96 @@ class FandeDataModuleASE(LightningDataModule):
 
     # https://github.com/lab-cosmo/librascal/blob/4e576ae7b9d3740715ab1910def5e1a15ffd1268/tests/python/python_representation_calculator_test.py
     # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
+    def calculate_invariants_librascal_no_derivatives(
+            self,
+            trajectory, 
+            soap_params,
+            atomic_groups = None, 
+            centers_positions=None, 
+            frames_per_batch=10): 
+        """
+        Calculate SOAP invariants without derivatives using librascal.
+
+        """
+
+        # species= soap_params['species']
+        # periodic= soap_params['periodic']
+        interaction_cutoff = soap_params['interaction_cutoff']
+        gaussian_sigma_constant= soap_params['gaussian_sigma_constant']
+        max_radial= soap_params['max_radial']
+        max_angular= soap_params['max_angular']
+        cutoff_smooth_width = soap_params['cutoff_smooth_width']
+        # average= soap_params['average']
+        # crossover= soap_params['crossover']
+        # dtype= soap_params['dtype']
+        # sparse= soap_params['sparse']
+        # positions = soap_params['positions']
+
+        hypers = dict(soap_type="PowerSpectrum",
+                    interaction_cutoff=interaction_cutoff,
+                    max_radial=max_radial,
+                    max_angular=max_angular,
+                    gaussian_sigma_constant=gaussian_sigma_constant,
+                    gaussian_sigma_type="Constant",
+                    cutoff_function_type="RadialScaling",
+                    cutoff_smooth_width=cutoff_smooth_width, # 0.1 is way better than 0.5
+                    cutoff_function_parameters=
+                            dict(
+                                    rate=1,
+                                    scale=3.5,
+                                    exponent=4
+                                ),
+                    radial_basis="GTO",
+                    normalize=True, # setting False makes model untrainable
+                    #   optimization=
+                    #         dict(
+                    #                 Spline=dict(
+                    #                    accuracy=1.0e-05
+                    #                 )
+                    #             ),
+                    compute_gradients=True,
+                    expansion_by_species_method='structure wise'
+                    )
+    
+        self.soap_hypers_energy = hypers
+
+        traj = trajectory
+        for f in traj:
+            f.wrap(eps=1e-18)
+
+        n_atoms = len(traj[0])
+
+      
+        frames_batches = self.prepare_batches(traj, forces=None, energies=None, frames_per_batch=frames_per_batch)
+
+        
+
+        print(f"Total length of traj is {len(traj)}")
+        print(f"Total number of batches {len(frames_batches)}")       
+        print("Calculating invariants on trajectory with librascal...")
+   
+        soap = SphericalInvariants(**hypers)
+
+        # DX_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]  
+        # F_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
+        # grad_info_sub_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
+
+        for ind_b, batch in enumerate(tqdm(frames_batches)):
+            traj_b = batch['traj']
+            # forces_b = batch['forces']
+            # energies_b = batch['energies']
+
+            managers = soap.transform(traj_b)
+            soap_array = managers.get_features(soap)
+
+        X = torch.tensor(soap_array,dtype=torch.float32)
+
+
+        return X
+
+
+    # https://github.com/lab-cosmo/librascal/blob/4e576ae7b9d3740715ab1910def5e1a15ffd1268/tests/python/python_representation_calculator_test.py
+    # https://github.com/lab-cosmo/librascal/blob/f45e6052e2ca5e3e5b62f1440a79b8da5eceec96/examples/needs_updating/Spherical_invariants_and_database_exploration.ipynb
     def calculate_invariants_librascal(
             self, 
             soap_params=None,
@@ -343,7 +433,8 @@ class FandeDataModuleASE(LightningDataModule):
     def prepare_batches(
             self, 
             traj, 
-            forces, 
+            forces=None,
+            energies=None, 
             frames_per_batch=10):
         
         n_frames = len(traj)
@@ -356,7 +447,10 @@ class FandeDataModuleASE(LightningDataModule):
         for i in range(n_batches):
             batch = {}
             batch["traj"] = traj[i*frames_per_batch:(i+1)*frames_per_batch]
-            batch["forces"] = forces[i*frames_per_batch:(i+1)*frames_per_batch]
+            if forces is not None:
+                batch["forces"] = forces[i*frames_per_batch:(i+1)*frames_per_batch]
+            if energies is not None:
+                batch["energies"] = energies[i*frames_per_batch:(i+1)*frames_per_batch]
             batches.append(batch)
 
         return batches
