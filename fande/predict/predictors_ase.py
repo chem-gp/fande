@@ -557,21 +557,8 @@ class PredictorASE:
 
     def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
-            # if self.hparams["device"] == "gpu":
-            #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
-
-            # print("Starting forces predictions...")
-
-            # import sys
-            # with open('predict_forces_logger.txt', 'w') as f:
-            #     sys.stdout = f # Change the standard output to the file we created.
-            #     print('Calculating invariants...')
-
-            import warnings
-            warnings.warn("Calculating invariants...")
-
             n_atoms = len(snapshot)
-            DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+            X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
             atomic_groups = self.fdm.atomic_groups_train
             # snap_DX = self.fdm.snap_DX
 
@@ -592,7 +579,7 @@ class PredictorASE:
                 # with open('predict_forces_logger.txt', 'w') as f:
                 #     sys.stdout = f # Change the standard output to the file we created.
                 #     print(f'Starting force predictions for model {idx}')
-                warnings.warn("Predicting...")
+                # warnings.warn("Predicting...")
                 # Warning('Predicting...')
                 # logger.info("Predicting...")
                 # model.eval()
@@ -610,16 +597,6 @@ class PredictorASE:
                 predictions = res.mean.cpu().detach().numpy()
 
                 predictions_variance = res.variance.cpu().detach().numpy()
-
-
-                # variances_torch = res.variance
-                # print(variances_torch, res.confidence_region())
-                # lower, upper = res.confidence_region()
-                # lower = 0.1 * lower.cpu().detach().numpy()
-                # upper = 0.1 * upper.cpu().detach().numpy()
-                # lower = lower.tolist()
-                # upper = upper.tolist()
-                # print(lower, upper)   
                          
                 n_atoms_in_group = len(atomic_groups[idx])
                 pred_forces = predictions.reshape((n_atoms_in_group, 3))

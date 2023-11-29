@@ -1,20 +1,15 @@
-
 from ase import Atoms
 from ase.io import write
 import os
 
 
 class FandeAtomsWrapper(Atoms):
-        """
-        Wrapper around ASE Atoms object to add the functionality writing force/energy uncertainties on the fly.
+    """
+    Wrapper around ASE Atoms object to add the functionality writing force/energy uncertainties on the fly.
 
-        """   
-    def __init__(
-        self, 
-        *args, 
-        **kwargs
-        ):
+    """   
 
+    def __init__(self, *args, **kwargs):
         super(FandeAtomsWrapper, self).__init__(*args, **kwargs)      
         self.calc_history_counter = 0
         self.request_variance = False
