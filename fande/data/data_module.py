@@ -156,9 +156,7 @@ class FandeDataModule(LightningDataModule):
         n_atoms = len(traj[0])
 
       
-        frames_batches = self.prepare_batches(traj, forces=None, energies=None, frames_per_batch=frames_per_batch)
-
-        
+        frames_batches = self.prepare_batches(traj, forces=None, energies=None, frames_per_batch=frames_per_batch)      
 
         print(f"Total length of traj is {len(traj)}")
         print(f"Total number of batches {len(frames_batches)}")       
@@ -198,7 +196,7 @@ class FandeDataModule(LightningDataModule):
             calculation_context=None, # train/test/production contexts
             trajectory=None): 
         """
-        Calculate SOAP invariants using librascal. If `trajectory` is not specified, the invariants are calculated for the training or test set of frames (`self.traj_train` or `self.traj_test`).
+        Calculate SOAP invariants with derivatives using librascal. If `trajectory` is not specified, the invariants are calculated for the training or test set of frames (`self.traj_train` or `self.traj_test`).
 
         Parameters:
         -----------
@@ -334,12 +332,16 @@ class FandeDataModule(LightningDataModule):
         F_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
         grad_info_sub_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
 
+        X_np_batched = []
+
         for ind_b, batch in enumerate(tqdm(frames_batches)):
             traj_b = batch['traj']
             forces_b = batch['forces']
 
             managers = soap.transform(traj_b)
             soap_array = managers.get_features(soap)
+            X_np_batched.append(soap_array)
+
             soap_grad_array = managers.get_features_gradient(soap)
             grad_info = managers.get_gradients_info()
             # get the information necessary to the computation of gradients. 
@@ -419,17 +421,21 @@ class FandeDataModule(LightningDataModule):
         # we cannot create a single tensor for all groups, because the number of environments is different for each group
         DX = [torch.tensor(DX_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
         F = [torch.tensor(F_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
+        
+        X = torch.tensor(X_np_batched,dtype=torch.float32)
 
         if calculation_context == "train":
             self.train_DX = DX
             self.train_F = F
+            self.train_X = X
         elif calculation_context == "test":
             self.test_DX = DX
             self.test_F = F
+            self.test_X = X
 
 
         if calculation_context == 'production':
-            return DX
+            return X, DX
         else:
             return
 
@@ -468,12 +474,12 @@ class FandeDataModule(LightningDataModule):
             same_centers_derivatives=True):
 
         traj = [snapshot]
-        snap_DX = self.calculate_invariants_librascal(
+        snap_X, snap_DX = self.calculate_invariants_librascal(
             trajectory=traj, 
             same_centers_derivatives=same_centers_derivatives, 
             calculation_context="production")
 
-        return snap_DX
+        return snap_X, snap_DX
 
 
     def randomly_rotate(self, traj_initial, forces):

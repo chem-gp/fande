@@ -1,4 +1,5 @@
-from .fande_calc import FandeCalc, FandeAtomsWrapper
+from .fande_calc import FandeCalc
 
+from .fande_atoms_wrapper import FandeAtomsWrapper
 
-__all__ = ['FandeCalc']
+__all__ = ['FandeCalc', 'FandeAtomsWrapper']
