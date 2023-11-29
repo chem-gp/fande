@@ -1,4 +1,4 @@
-from .data_module_ase import FandeDataModuleASE
+from .data_module import FandeDataModule
 
 
 class AttrDict(dict):

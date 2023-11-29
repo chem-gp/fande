@@ -34,8 +34,11 @@ from fande import logger
 
 
 
-class FandeDataModuleASE(LightningDataModule):
-    def __init__(self, training_data, test_data, hparams, units='ev_angstrom'):
+class FandeDataModule(LightningDataModule):
+    def __init__(
+        self, training_data, 
+        hparams):
+
         super().__init__()
         self.hparams.update(hparams)
 
@@ -43,19 +46,16 @@ class FandeDataModuleASE(LightningDataModule):
         self.forces_train = training_data['forces']
 
         self.energies_train = training_data['energies']
-        self.trajectory_eneriges_train = training_data['trajectory_energies']
+        # self.trajectory_eneriges_train = training_data['trajectory_energies']
         
-
+        self.test_data = None
         # self.traj_train, self.forces_train = self.randomly_rotate(self.traj_train, self.forces_train)
 
-        self.traj_test = test_data['trajectory']
-        self.energies_test = test_data['energies']
-        self.forces_test = test_data['forces']
+        self.test_DX = None
+        self.test_F = None
 
         self.train_DX = None
         self.train_F = None
-        self.test_DX = None
-        self.test_F = None
 
         self.train_X = None
         self.train_E = None
@@ -194,7 +194,7 @@ class FandeDataModuleASE(LightningDataModule):
             centers_positions=None, 
             derivatives_positions=None,
             same_centers_derivatives=False,
-            frames_per_batch=10,
+            frames_per_batch=1,
             calculation_context=None, # train/test/production contexts
             trajectory=None): 
         """
@@ -290,6 +290,9 @@ class FandeDataModuleASE(LightningDataModule):
             self.centers_positions_train = centers_positions
             self.derivatives_positions_train = derivatives_positions
         elif calculation_context == "test":
+            self.traj_test = self.test_data['trajectory']
+            self.energies_test = self.test_data['energies']
+            self.forces_test = self.test_data['forces']
             traj = self.traj_test
             forces = self.forces_test
 
@@ -459,82 +462,6 @@ class FandeDataModuleASE(LightningDataModule):
         
 
 
-    def calculate_test_invariants_librascal(
-            self, 
-            test_centers_positions=None, 
-            test_derivatives_positions=None,
-            same_centers_derivatives=False):
-        """Deprecated! Use calculate_invariants_librascal instead."""
-
-        raise DeprecationWarning("Deprecated! Use calculate_invariants_librascal instead.")
-        
-        traj_test = self.traj_test
-
-        for f in traj_test:
-            f.wrap(eps=1e-18)
-
-        n_atoms = len(traj_test[0])
-
-        print(f"Total length of test traj is {len(traj_test)}")
-        
-        hypers = self.soap_hypers 
-
-        print("Calculating invariants on test trajectory with librascal...")
-        soap_test = SphericalInvariants(**hypers)
-        managers_test = soap_test.transform(traj_test)
-        # soap_array_test = managers_test.get_features(soap_test)
-        soap_grad_array_test = managers_test.get_features_gradient(soap_test)           
-        test_grad_info = managers_test.get_gradients_info()
-        # DX_test = soap_grad_array_test.reshape((grad_info_test.shape[0], 3, -1))
-        #for now just subsampling the grad_array
-        if test_centers_positions is not None and test_derivatives_positions is not None:
-            print("Subsampling the gradients for selected positions...")
-            a = test_grad_info[:,1]
-            b = test_grad_info[:,2]
-
-            if same_centers_derivatives:
-                test_indices_sub = np.where(
-                    np.in1d(a%n_atoms, test_centers_positions) & 
-                    np.in1d(b%n_atoms, test_derivatives_positions) &
-                    (a%n_atoms == b%n_atoms) )[0]
-            else:
-                test_indices_sub = np.where(
-                np.in1d(a%n_atoms, test_centers_positions) & 
-                np.in1d(b%n_atoms, test_derivatives_positions))[0]
-                    
-            forces_test_sub = np.zeros((test_grad_info[test_indices_sub].shape[0],3) )
-            test_grad_info_sub = test_grad_info[test_indices_sub]
-
-
-            for ind, gi in enumerate(test_grad_info_sub):
-                forces_test_sub[ind] = self.forces_test[gi[0], gi[2]%n_atoms]
-
-            forces_test_flat = forces_test_sub.flatten()
-
-
-            test_indices_sub_3x = np.empty(( 3*test_indices_sub.size,), dtype=test_indices_sub.dtype)
-            test_indices_sub_3x[0::3] = 3*test_indices_sub
-            test_indices_sub_3x[1::3] = 3*test_indices_sub+1
-            test_indices_sub_3x[2::3] = 3*test_indices_sub+2
-            test_DX_np = soap_grad_array_test[test_indices_sub_3x]
-
-
-
-        if test_centers_positions is not None and test_derivatives_positions is not None:
-            self.test_DX = torch.tensor(test_DX_np, dtype=torch.float32)
-            self.test_F = torch.tensor(forces_test_flat, dtype=torch.float32)
-
-        print(self.test_F.shape)
-
-        del soap_test, managers_test, soap_grad_array_test, test_DX_np
-
-
-        # need to also update forces...
-
-
-        return test_grad_info_sub
-    
-
     def calculate_snapshot_invariants_librascal(
             self,
             snapshot: ase.Atoms, 
@@ -548,132 +475,6 @@ class FandeDataModuleASE(LightningDataModule):
 
         return snap_DX
 
-
-# pending for deletion
-    # def get_training_data(self, n_atoms=None):
-    #     """
-    #     return training snapshots, energies and forces
-    #     """
-    #     # check this method!
-
-    #     training_snapshots = self.mol_traj[0:1600]
-    #     # tensor_Y = self.train_Y
-    #     # tensor_Y = tensor_Y.view(3*n_atoms+1,-1).transpose(0,1)
-
-    #     # training_forces = tensor_Y[:,:-1].squeeze()
-    #     # training_energies = tensor_Y[:,-1].squeeze()
-    #     # training_forces = training_forces.reshape(-1, n_atoms, 3)
-
-    #     print( self.forces_energies.shape )
-
-    #     return training_snapshots, training_energies, training_forces
-
-
-
-# Pending for deletion...
-    # def prepare_torch_dataset(self, energies, forces, descriptors, derivatives):
-    #     """
-    #     Prepare train/test datasets from raw computed energies/descriptors and forces/derivatives.
-    #     """
-    #     self.n_atoms = forces.shape[1]
-
-    #     r_test = 0.2
-    #     r_train = 1 - r_test
-
-    #     n_samples = energies.shape[0]
-
-
-    #     n_train = int(r_train * n_samples)
-    #     n_test = n_samples - n_train
-
-    #     self.n_train_structures = n_train
-    #     self.n_test_structures = n_test
-
-    #     energies_train = energies[0:n_train]
-    #     forces_train = forces[0:n_train]
-
-    #     self.normalizing_const = np.max(energies_train) - np.min(energies_train)
-    #     self.normalizing_shift = np.min(energies_train)
-
-    #     forces = forces / self.normalizing_const
-    #     energies = ( energies - self.normalizing_shift ) / self.normalizing_const
-    #     self.forces_norm = forces
-    #     self.energies_norm = energies
-
-
-    #     energies_train = energies[0:n_train]
-    #     forces_train = forces[0:n_train]
-    #     energies_test = energies[n_train:-1]
-    #     forces_test = energies[n_train:-1]
-
-    #     derivatives_flattened = derivatives.reshape(
-    #         derivatives.shape[0], derivatives.shape[1], -1, derivatives.shape[-1]
-    #     )
-    #     descriptors_expanded = np.expand_dims(descriptors, 2)
-
-    #     derivatives_descriptors = np.concatenate(
-    #         (derivatives_flattened, descriptors_expanded), axis=2
-    #     )
-
-    #     derivatives_descriptors = derivatives_descriptors.squeeze().astype(np.float64)
-        
-    #     forces_energies = np.concatenate(
-    #         (forces.reshape(forces.shape[0], -1), energies[:, None]), axis=1
-    #     ).astype(np.float64)
-
-    #     derivatives_descriptors_torch = torch.tensor(derivatives_descriptors)
-    #     forces_energies_torch = torch.tensor(forces_energies)
-
-
-    #     train_X = derivatives_descriptors_torch[0 : n_train, :, :]
-    #     train_Y = forces_energies_torch[0 : n_train, :]
-
-
-    #     test_X = derivatives_descriptors_torch[
-    #         n_train : n_samples, :, :
-    #     ]
-    #     test_Y = forces_energies_torch[n_train : n_samples, :]
-
-    #     test_energies_torch = test_Y[:, -1]
-    #     test_forces_torch = test_Y[:, :-1].reshape(-1, 3, self.n_atoms)
-
-    #     self.test_shape = test_Y.shape
-    #     self.train_shape = train_Y.shape
-
-    #     train_X = train_X[:, :, :].transpose(0, 1).flatten(0, 1)
-    #     train_Y = train_Y[:, :].transpose(0, 1).flatten(0, 1)
-
-    #     test_X = test_X[:, :, :].transpose(0, 1).flatten(0, 1)
-    #     test_Y = test_Y[:, :].transpose(0, 1).flatten(0, 1)
-
-
-    #     print("Train set")
-    #     print("Shape: ", train_X.shape, train_Y.shape)
-    #     print("Type: ", train_X.dtype, train_Y.dtype)
-    #     print("Device: ", train_X.device, train_Y.device)
-
-    #     print("\nTest set")
-    #     print("Shape: ", test_X.shape, test_Y.shape)
-    #     print("Type: ", test_X.dtype, test_Y.dtype)
-    #     print("Device: ", test_X.device, test_Y.device)
-
-    #     train_X = train_X.to(torch.float32)
-    #     train_Y = train_Y.to(torch.float32)
-    #     test_X = test_X.to(torch.float32)
-    #     test_Y = test_Y.to(torch.float32)
-
-    #     self.train_X = train_X
-    #     self.train_Y = train_Y
-    #     self.test_X = test_X
-    #     self.test_Y = test_Y
-
-    #     self.train_X_e = train_X[-n_train:]
-    #     self.train_Y_e = train_Y[-n_train:]
-    #     self.test_X_e = test_X[-n_test:]
-    #     self.test_Y_e = test_Y[-n_test:]
-
-
-    #     return
 
     def randomly_rotate(self, traj_initial, forces):
         print("Randomly rotating training configuration and forces...")
@@ -701,82 +502,6 @@ class FandeDataModuleASE(LightningDataModule):
         # io.write("data/dump/rotated_traj.xyz", mol_traj, format="extxyz")
 
         return traj, forces_rotated
-
-
-    # def calculate_invariants_dscribe(self, soap_params):
-
-    #     species= soap_params['species']
-    #     periodic= soap_params['periodic']
-    #     rcut= soap_params['rcut']
-    #     sigma= soap_params['sigma']
-    #     nmax= soap_params['nmax']
-    #     lmax= soap_params['lmax']
-    #     average= soap_params['average']
-    #     crossover= soap_params['crossover']
-    #     dtype= soap_params['dtype']
-    #     sparse= soap_params['sparse']
-    #     positions = soap_params['positions']
-
-    #     soap = SOAP(
-    #         species=species,
-    #         periodic=periodic,
-    #         rcut=rcut,
-    #         sigma=sigma,
-    #         nmax=nmax,
-    #         lmax=lmax,
-    #         average=average,
-    #         crossover=crossover,
-    #         dtype=dtype,
-    #         sparse=sparse  
-    #     )
-
-    #     traj_train = self.traj_train
-    #     traj_test = self.traj_test
-
-    #     print(f"Total length of train traj is {len(traj_train)}")
-    #     print("Starting SOAP calculation...")
-    #     derivatives_train, descriptors_train = soap.derivatives(
-    #         traj_train,
-    #         positions=[positions] * len(traj_train),
-    #         n_jobs=10,
-    #         # method="analytical"
-    #     )
-    #     print("SOAP calculation done!")
-    #     derivatives_train = derivatives_train.squeeze()
-    #     descriptors_train = descriptors_train.squeeze()
-
-    #     print(f"Total length of test traj is {len(traj_test)}")
-    #     print("Starting SOAP calculation...")
-    #     derivatives_test, descriptors_test = soap.derivatives(
-    #         traj_test,
-    #         positions=[positions] * len(traj_test),
-    #         n_jobs=10,
-    #         # method="analytical"
-    #     )
-    #     print("SOAP calculation done!")
-    #     derivatives_test = derivatives_test.squeeze()
-    #     descriptors_test = descriptors_test.squeeze()
-
-
-    #     self.train_X = torch.tensor(descriptors_train)      
-    #     self.train_DX = torch.tensor(
-    #             derivatives_train.transpose(2,1,0,3).reshape(
-    #         derivatives_train.shape[0]*derivatives_train.shape[1]*derivatives_train.shape[2], -1
-    #     ))
-
-    #     self.test_X = torch.tensor(descriptors_test)      
-    #     self.test_DX = torch.tensor(
-    #             derivatives_test.transpose(2,1,0,3).reshape(
-    #         derivatives_test.shape[0]*derivatives_test.shape[1]*derivatives_test.shape[2], -1
-    #     ))
-
-    #     print(derivatives_train.shape)
-    #     print(descriptors_train.shape)
-
-    #     # train_X = train_X.to(torch.float32)
-    #     # train_Y = train_Y.to(torch.float32)
-    #     # test_X = test_X.to(torch.float32)
-    #     # test_Y = test_Y.to(torch.float32)
 
 
     def prepare_train_data_loaders(
