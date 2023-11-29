@@ -308,8 +308,10 @@ class FandeDataModule(LightningDataModule):
 
         n_atoms = len(traj[0])
 
+        tqdm_ = lambda x: x
         if calculation_context == "train":
             self.n_atoms = n_atoms
+            tqdm_ = tqdm
 
         if atomic_groups == 'all':
             atomic_groups = [list(range(n_atoms))]
@@ -322,9 +324,11 @@ class FandeDataModule(LightningDataModule):
 
         
 
-        print(f"Total length of traj is {len(traj)}")
-        print(f"Total number of batches {len(frames_batches)}")       
-        print("Calculating invariants on trajectory with librascal...")
+        # print(f"Total length of traj is {len(traj)}")
+        # print(f"Total number of batches {len(frames_batches)}")       
+        # print("Calculating invariants on trajectory with librascal...")
+
+
    
         soap = SphericalInvariants(**hypers)
 
@@ -334,7 +338,7 @@ class FandeDataModule(LightningDataModule):
 
         X_np_batched = []
 
-        for ind_b, batch in enumerate(tqdm(frames_batches)):
+        for ind_b, batch in enumerate(tqdm_(frames_batches)):
             traj_b = batch['traj']
             forces_b = batch['forces']
 
@@ -451,8 +455,8 @@ class FandeDataModule(LightningDataModule):
         n_frames = len(traj)
         n_batches = math.ceil(n_frames/frames_per_batch)
 
-        print(f"Total number of frames is {n_frames}")
-        print(f"Total number of batches is {n_batches}")
+        # print(f"Total number of frames is {n_frames}")
+        # print(f"Total number of batches is {n_batches}")
 
         batches = []
         for i in range(n_batches):
