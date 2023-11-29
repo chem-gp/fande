@@ -11,7 +11,7 @@ from ase.calculators.calculator import (
 
 from ase import Atoms
 
-from fande.predict import PredictorASE
+from fande.predict import FandePredictor
 
 from ase.neighborlist import NeighborList
 from ase.stress import full_3x3_to_voigt_6_stress
@@ -38,7 +38,7 @@ class FandeCalc(Calculator):
 
 
     def __init__(self, 
-                 predictor: PredictorASE,
+                 predictor: FandePredictor,
                  forces_errors_plot_file=None, 
                  **kwargs):
         Calculator.__init__(self, **kwargs)

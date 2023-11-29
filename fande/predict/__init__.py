@@ -1,3 +1,3 @@
-from .predictors_ase import PredictorASE 
+from .predictor import FandePredictor
 
 

@@ -9,11 +9,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-# from fande.compute.compute_soap import InvariantsComputer # due to problems with dscribe
-
 from fande.utils import get_vectors_e, get_vectors_f
-
-# from dscribe.descriptors import SOAP
 
 import torch
 import torchmetrics
@@ -30,118 +26,13 @@ from fande import logger
 import gpytorch
 
 
-# class SimplePredictorASE:
-#     def __init__(self, hparams, model_e, trainer_e, model_f, trainer_f):
-        
-#         self.hparams = hparams
-#         self.trainer_e = trainer_e
-#         self.model_e = model_e
-#         self.trainer_f = trainer_f
-#         self.model_f = model_f
 
-#         self.soap_computer = InvariantsComputer(hparams)
-
-#         self.n_molecules = 1
-#         self.n_atoms = 12
-#         self.batch_size = 100_000
-
-#         self.soap_full = None
-
-
-
-#     def predict_single_energy(self, snapshot, positions):
-
-#         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-#         self.soap_full = x
-
-#         x = x.view(3*self.n_atoms+1, self.n_molecules, -1).transpose(0,1)
-#         x = x[:, -1, :]
-
-#         y_dummy = torch.tensor( [0.0] )
-
-#         test = TensorDataset(x, y_dummy)
-#         test_dl = DataLoader(test, batch_size=self.batch_size)
-
-#         res = self.trainer_e.predict(self.model_e, test_dl)[0]
-
-#         predictions_torch = res.mean
-#         variances_torch = res.variance
-
-#         energy = predictions_torch.cpu().detach().numpy()
-#         variance = variances_torch.cpu().detach().numpy()
-
-#         return energy, variance
-
-
-#     def predict_single_forces(self, snapshot, positions):
-
-#         if self.soap_full is not None:
-#             x = self.soap_full
-#         else:
-#             x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-#             self.soap_full = x
-
-
-#         x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
-#         x = x[:,:-1, :].squeeze()
-
-#         y_dummy = torch.zeros(3*self.n_atoms)
-
-#         test = TensorDataset(x, y_dummy)
-#         test_dl = DataLoader(test, batch_size=self.batch_size)
-#         res = self.trainer_f.predict(self.model_f, test_dl)[0]
-
-#         predictions_torch = res.mean
-#         variances_torch = res.variance
-
-#         f_ = predictions_torch.cpu().detach().numpy()
-#         f_var_ = variances_torch.cpu().detach().numpy()
-
-#         return f_, f_var_
-
-
-#     # def predict_single_forces(self, snapshot, positions):
-
-#     #     if self.soap_full is not None:
-#     #         x = self.soap_full
-#     #     else:
-#     #         x = self.soap_computer.soap_single_snapshot(snapshot, positions)
-#     #         self.soap_full = x
-
-
-#     #     x = x.view(3*self.n_atoms+1, self.n_molecules,-1).transpose(0,1)
-#     #     x = x[:,:-1, :].squeeze()
-
-#     #     y_dummy = torch.zeros(3*self.n_atoms)
-
-#     #     test = TensorDataset(x, y_dummy)
-#     #     test_dl = DataLoader(test, batch_size=self.batch_size)
-#     #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
-
-#     #     predictions_torch = res.mean
-#     #     variances_torch = res.variance
-
-#     #     f_ = predictions_torch.cpu().detach().numpy()
-#     #     f_var_ = variances_torch.cpu().detach().numpy()
-
-#     #     return f_, f_var_
-
-#     def unnormalize_energy(self):
-#         ...
-
-#     def unnormalize_forces(self):
-#         ...
-
-
-class PredictorASE:
+class FandePredictor:
     def __init__(
         self,
         fdm,
-        # model_e,
-        # trainer_e,
         atomic_group_force_model,
-        # model_f,
-        # trainer_f,
+        energy_model,
         hparams,
         soap_params
     ):
@@ -152,9 +43,9 @@ class PredictorASE:
 
         # self.model_e = model_e
 
-        self.ag_force_model = atomic_group_force_model
+        self.energy_model = energy_model
 
-        # self.trainer_e = trainer_e
+        self.ag_force_model = atomic_group_force_model
 
 
         self.test_X = fdm.test_X
@@ -164,24 +55,19 @@ class PredictorASE:
 
         self.test_traj = fdm.traj_test
 
-        # self.n_molecules = fdm.test_E.shape[0]
-
         self.n_atoms = 1
 
         self.batch_size = 1000_000
 
-        # self.xtb_calc = XTB(method="GFN2-xTB")
-
+ 
     def predict_and_plot_energies(self):
 
         raise NotImplementedError
 
-        # print(self.n_molecules, self.n_atoms)
         test_x_e, test_y_e = get_vectors_e(
             self.test_X, self.test_F, self.n_molecules, self.n_atoms
         )
 
-        # print(test_y_e.shape)
         test = TensorDataset(test_x_e, test_y_e)
         test_dl = DataLoader(test, batch_size=self.batch_size)
 
@@ -189,10 +75,6 @@ class PredictorASE:
 
         predictions_torch = res.mean
         variances_torch = res.variance
-        # print(variances_torch)
-
-        # variances_torch = res.variance#res.confidence_region()
-        # print(variances_torch)
 
         predictions = res.mean.cpu().detach().numpy()
         actual_values = test_y_e.cpu().detach().numpy()
@@ -396,18 +278,6 @@ class PredictorASE:
 
                 print(self.test_F.shape)
 
-                # variances_torch = res.variance
-                # print(variances_torch, res.confidence_region())
-
-                # lower, upper = res.confidence_region()
-                # lower = 0.1 * lower.cpu().detach().numpy()
-                # upper = 0.1 * upper.cpu().detach().numpy()
-
-                # lower = lower.tolist()
-                # upper = upper.tolist()
-                # print(lower, upper)
-
-                # print("HI")
 
                 predictions = res.mean.cpu().detach().numpy()
                 actual_values = self.fdm.test_F.cpu().detach().numpy()
@@ -435,122 +305,6 @@ class PredictorASE:
             # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
 
 
-            # predicted_forces = predictions.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)       
-            # # upper_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
-            # # lower_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)      
-            # actual_forces = self.test_F.numpy()
-            # actual_forces = actual_forces.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
-
-            # predicted_forces = np.concatenate( (predicted_forces[:,:,0], predicted_forces[:,:,1], predicted_forces[:,:,2]) )
-            # # upper_forces = np.concatenate( (upper_forces[:,:,0], upper_forces[:,:,1], upper_forces[:,:,2]) )
-            # # lower_forces = np.concatenate( (lower_forces[:,:,0], lower_forces[:,:,1], lower_forces[:,:,2]) )
-            # actual_forces = np.concatenate( (actual_forces[:,:,0], actual_forces[:,:,1], actual_forces[:,:,2]) )
-
-            # predicted_energies = predictions[-self.n_molecules :]
-            # # upper_energies = upper[-self.n_molecules :]
-            # # lower_energies = lower[-self.n_molecules :]
-
-            # actual_energies = self.test_E
-
-            # # l = self.test_shape[0]
-            # pred_forces = predicted_forces
-            # test_forces = actual_forces
-
-            # pred_energies = predicted_energies
-            # test_energies = actual_energies.cpu().detach().numpy()
-
-            # # FMIN = self.forces_energies.min()
-            # # FMAX = self.forces_energies.max()
-
-            # FMIN = self.test_F.min()
-            # FMAX = self.test_F.max()
-
-            # x_axis = range(200)
-            # # lower_energies = 0.1*np.ones(400)
-            # # upper_energies = 0.2*np.ones(400)
-            # # print(lower_energies, upper_energies)
-            # plt.rcParams["figure.figsize"] = (30, 5)
-            # plt.plot(pred_energies, color="blue", label="predictions", linewidth=0.4)
-            # plt.plot(test_energies, color="red", label="actual values", linewidth=0.4)
-            # # plt.fill_between(
-            # #     x_axis,
-            # #     pred_energies - lower_energies,
-            # #     pred_energies + upper_energies,
-            # #     color="b",
-            # #     alpha=0.1,
-            # #     label="Confidence of prediction",
-            # # )
-            # plt.title(f"Energies")
-            # plt.legend()
-            # # plt.axvspan(0, l, facecolor='purple', alpha=0.05)
-            # # plt.ylim(FMIN, FMAX)
-            # # wandb.log({"energy": wandb.Image(plt)})
-            # plt.show()
-
-            # # variances_torch = res.variance
-            # # print(type(res.confidence_region()))
-
-            # x_axis = np.concatenate(
-            #     (
-            #         np.arange(0, self.n_molecules, 100),
-            #         np.arange(0, self.n_molecules, 100),
-            #         np.arange(0, self.n_molecules, 100),
-            #     )
-            # )
-
-            # full_x = np.arange(0, 3 * self.n_molecules, 100).tolist()
-            # # lower_forces = pred_forces - lower_forces
-            # # upper_forces = pred_forces + upper_forces
-
-            # x_axis_forces = np.arange(3 * self.n_molecules).tolist()
-
-            # mol = self.test_traj[0]
-            # plt.rcParams["figure.figsize"] = (30, 5)
-            # l = self.n_molecules
-            # for fatom in range(self.n_atoms):
-
-            #     plt.plot(
-            #         pred_forces[:, fatom], color="blue", label="predictions", linewidth=0.3
-            #     )
-            #     plt.plot(
-            #         test_forces[:, fatom], color="red", label="actual values", linewidth=0.3
-            #     )
-
-            #     # print(lower_forces[:,fatom],upper_forces[:,fatom])
-
-            #     # plt.fill_between(
-            #     #     x_axis_forces,
-            #     #     lower_forces[:,fatom],
-            #     #     upper_forces[:,fatom],
-            #     #     color="b",
-            #     #     alpha=0.1,
-            #     #     label="Confidence of prediction"
-            #     # )
-
-            #     plt.title(f"Forces, atom {fatom} : {mol[fatom].symbol}")
-            #     plt.legend()
-            #     plt.axvspan(0, l, facecolor="purple", alpha=0.05)
-            #     plt.axvspan(l, 2 * l, facecolor="green", alpha=0.05)
-            #     plt.axvspan(2 * l, 3 * l, facecolor="orange", alpha=0.05)
-            #     plt.ylim(FMIN, FMAX)
-            #     plt.text(l / 2, FMAX / 2, r"$F_x$", fontsize=44, alpha=0.1)
-            #     plt.text(3 * l / 2, FMAX / 2, r"$F_y$", fontsize=44, alpha=0.1)
-            #     plt.text(5 * l / 2, FMAX / 2, r"$F_z$", fontsize=44, alpha=0.1)
-            #     # wandb.log({f"atom {fatom} : {mol[fatom].symbol}": wandb.Image(plt) })
-            #     # plt.xticks(full_x, x_axis) # check(there's some error)
-
-            #     plt.show()
-                
-            #     self.f_mae = torchmetrics.functional.mean_absolute_error(
-            #         torch.tensor(pred_forces[:, fatom]), torch.tensor(test_forces[:, fatom])
-            #     )
-            #     self.f_mse = torchmetrics.functional.mean_squared_error(
-            #         torch.tensor(pred_forces[:, fatom]), torch.tensor(test_forces[:, fatom])
-            #     )
-            #     print("Forces MAE: %5.4f" % self.f_mae.item())
-            #     print("Forces MSE: %5.4f" % self.f_mse.item())
-            #     # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
-
             return
 
 
@@ -567,24 +321,6 @@ class PredictorASE:
             forces = np.zeros((n_atoms, 3))
             forces_variance = np.zeros((n_atoms, 3))
             for idx, model in enumerate(self.ag_force_model.models):              
-
-                # zeros_F = torch.zeros_like(DX_grouped[idx][:,0])
-
-                # test = TensorDataset(DX_grouped[idx], zeros_F)
-                # test_dl = DataLoader(test, batch_size=self.batch_size)
-                # trainer_f = self.ag_force_model.trainers[idx]
-
-
-
-                # with open('predict_forces_logger.txt', 'w') as f:
-                #     sys.stdout = f # Change the standard output to the file we created.
-                #     print(f'Starting force predictions for model {idx}')
-                # warnings.warn("Predicting...")
-                # Warning('Predicting...')
-                # logger.info("Predicting...")
-                # model.eval()
-                # with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                # print(f"predicting forces for {idx} model")
 
                 # res = trainer_f.predict(model, test_dl)[0]
                 model = model.cuda()
@@ -643,13 +379,6 @@ class PredictorASE:
         per_model_MAE = []
 
         for idx, model in enumerate(self.ag_force_model.models):       
-
-            # for now doing predictions directly since lightning puts model back to CPU for some reason
-            # test = TensorDataset(self.fdm.test_DX[idx], self.fdm.test_F[idx])
-            # test_dl = DataLoader(test, batch_size=self.batch_size)
-            # trainer_f = self.ag_force_model.trainers[idx]
-            # model_f = self.ag_force_model.models[idx]
-            # res = trainer_f.predict(model_f, test_dl)[0]
 
             model = model.cuda()
             model.eval()
@@ -804,67 +533,6 @@ class PredictorASE:
 
         return f_, f_var_
 
-
-
-    # def soap_single(self, snapshot): # commented due to problems with imports in dscribe
-
-    #     soap_params = self.soap_params
-
-    #     species= soap_params['species']
-    #     periodic= soap_params['periodic']
-    #     rcut= soap_params['rcut']
-    #     sigma= soap_params['sigma']
-    #     nmax= soap_params['nmax']
-    #     lmax= soap_params['lmax']
-    #     average= soap_params['average']
-    #     crossover= soap_params['crossover']
-    #     dtype= soap_params['dtype']
-    #     sparse= soap_params['sparse']
-    #     positions = soap_params['positions']
-
-    #     soap = SOAP(
-    #         species=species,
-    #         periodic=periodic,
-    #         rcut=rcut,
-    #         sigma=sigma,
-    #         nmax=nmax,
-    #         lmax=lmax,
-    #         average=average,
-    #         crossover=crossover,
-    #         dtype=dtype,
-    #         sparse=sparse  
-    #     )
-
-    #     snap = [snapshot]
-
-    #     print("Starting SOAP calculation...")
-    #     derivatives, descriptors = soap.derivatives(
-    #         snap,
-    #         positions=[positions] * len(snap),
-    #         n_jobs=1,
-    #         # method="analytical"
-    #     )
-    #     print("SOAP calculation done!")
-    #     derivatives = derivatives.squeeze()
-    #     descriptors = descriptors.squeeze()
-
-    #     # print(derivatives.shape)
-
-    #     x = torch.tensor(descriptors)    
-
-    #     dx = torch.tensor(
-    #             derivatives.transpose(1,0,2).reshape(
-    #         derivatives.shape[0]*derivatives.shape[1], -1
-    #     ))
-
-    #     # print(dx.shape)
-
-
-    #     if self.hparams['device'] == 'gpu':
-    #         x = x.cuda()
-    #         dx = dx.cuda()
-
-    #     return x, dx
 
 
     def get_xtb_energy(self, atoms):
