@@ -2,7 +2,7 @@
 
 
 # Description
-Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes with SVI using GPUs
+Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Processes trained with [stochastic variational inference](https://jmlr.org/papers/volume14/hoffman13a/hoffman13a.pdf) on multiple GPUs.
 
 Project scope is for those doing research in probabilistic machine learning applied to chemical physics problems
 
