@@ -46,7 +46,7 @@ class FandeDataModule(LightningDataModule):
         self.forces_train = training_data['forces']
 
         self.energies_train = training_data['energies']
-        # self.trajectory_eneriges_train = training_data['trajectory_energies']
+        self.trajectory_eneriges_train = training_data['trajectory_energies']
         
         self.test_data = None
         # self.traj_train, self.forces_train = self.randomly_rotate(self.traj_train, self.forces_train)
@@ -519,7 +519,7 @@ class FandeDataModule(LightningDataModule):
             total_samples_per_group, 
             high_force_samples_per_group):
         """
-        Prepare data loaders for training. Currently data loaders are created within the FandeDataModule class and then passed to the group model classes.
+        Prepare data loaders for training on FORCES. Currently data loaders are created within the FandeDataModule class and then passed to the group model classes.
 
         Parameters
         ----------
@@ -574,3 +574,10 @@ class FandeDataModule(LightningDataModule):
         self.train_indices = train_indices      
 
         return train_data_loaders
+
+
+    def prepare_train_data_loaders_energy():
+        """
+        Prepare data loaders for training on ENERGIES. Currently data loaders are created within the FandeDataModule class and then passed to the energy model.
+        """
+        raise NotImplementedError("Not implemented yet")

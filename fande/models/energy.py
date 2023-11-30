@@ -12,7 +12,6 @@ from gpytorch.kernels import (
 )
 from gpytorch.means import ZeroMean, ConstantMean
 
-
 from gpytorch.lazy import MatmulLazyTensor
 
 from .my_kernels import CustomKernel
