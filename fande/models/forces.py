@@ -181,61 +181,11 @@ class ExactGPModelForces(ExactGP, LightningModule):
         # self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
         # self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
 
-        # self.covar_module = LinearKernel()
-
-        # if hparams is not None:
-        #     self.hparams.update(hparams)
-
 
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-
-## Below is unnecessary code...
-    def get_kernel_params(self):
-
-        vars = torch.zeros(self.num_envs)
-        print(f"Likelihood noise parameter: {self.likelihood.noise}")
-
-        for i in range(self.num_envs):
-            vars[i] = self.kernels_list[i].variance
-            # print(self.kernels_list[i].variance)
-
-        # for i in range(self.num_envs):
-        #     print(self.kernels_list[i].raw_variance)
-
-        return vars
-
-    def predict_forces(self, x, Dx):
-
-        # # da_dx = -derivatives[:, 0, :, :, :] # (100, 1, 12, 3, 720)
-        # # da_dx_torch = torch.tensor(da_dx)
-        # # test_da_dx = da_dx_torch[int(0.8*n_samples):n_samples, :]
-        # # train_da_dx = da_dx_torch[0:int(0.8*n_samples), :]
-        # # Dx = train_da_dx
-
-        # Dx = -Dx[:, 0, :, :]
-        # print(x.shape)
-        # print(Dx.shape)
-
-        # # K = model(train_x).lazy_covariance_matrix
-        # K = self.covar_module.forward(self.train_x, self.train_x)
-        # K = K.add_jitter(self.likelihood.noise)
-        # # Eye = gpytorch.lazy.DiagLazyTensor( torch.ones( train_x.size(1) ))
-        # Eye = torch.diag(torch.ones(self.train_x.size(1))).double().cuda()
-        # K_inv = K.inv_matmul(Eye)
-
-        # K_test = self.covar_module.forward_left(
-        #     x, Dx, self.train_x, self.train_Dx
-        # ).evaluate()
-
-        # W = K_inv.matmul(self.train_y).squeeze()
-        # f_pred = torch.matmul(K_test, W).squeeze()
-
-        # # f_pred = f_pred.transpose(0,2)#.reshape(-1, 12)
-
-        return f_pred
 
 
 
@@ -301,18 +251,7 @@ class ModelForces(LightningModule):
         print("ModelForces initialized")
 
 
-        # SVGP Approximate GP model with Variational ELBO as loss function
-        # self.inducing_points = train_x[0:2:2000, :]
-        # self.model = SVGPModelForces(inducing_points=self.inducing_points)
-        # self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
-        # self.mll = gpytorch.mlls.VariationalELBO(self.likelihood, self.model, num_data=train_y.size(0))
-
-
-    def get_model_parameters(self):
-        ...
-
-
-    
+   
     def forward(self, input_):
         """Compute prediction."""
 
@@ -390,18 +329,6 @@ class ModelForces(LightningModule):
         """
         return self(input_).mean.reshape(-1, len(self.atomic_group), 3)
     
-    # def info(self, dictionary: dict) -> None:
-    #     for key, value in dictionary.items():
-    #         self.log(key, value, prog_bar=True)
-
-    # def on_training_epoch_end(self, outputs) -> None:
-        # loss = sum(output['loss'] for output in outputs) / len(outputs)
-        # print(loss)
-
-
-
-
-## class that includes the collection of ModelForces models
 
 class GroupModelForces(LightningModule):
     """

@@ -41,7 +41,6 @@ class FandePredictor:
         self.hparams = hparams
         self.soap_params = soap_params
 
-        # self.model_e = model_e
 
         self.energy_model = energy_model
 
