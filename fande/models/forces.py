@@ -395,13 +395,9 @@ class GroupModelForces(LightningModule):
             self.trainers[idx].fit(model, self.train_data_loaders[idx])
 
 
-
-
     def eval(self):
-
         for model in self.models:
             model.eval()
-
         return
     
 

@@ -36,18 +36,24 @@ from fande import logger
 
 class FandeDataModule(LightningDataModule):
     def __init__(
-        self, training_data, 
-        hparams):
+        self, 
+        training_data=None, 
+        hparams=None
+        ):
 
         super().__init__()
+
+        if hparams is None:
+            hparams = {}
         self.hparams.update(hparams)
 
-        self.traj_train = training_data['trajectory']
-        self.forces_train = training_data['forces']
-
-        self.energies_train = training_data['energies']
-        self.trajectory_eneriges_train = training_data['trajectory_energies']
+        if training_data is not None:
+            self.traj_train = training_data['trajectory']
+            self.forces_train = training_data['forces']
+            self.energies_train = training_data['energies']
+            self.trajectory_energies_train = training_data['trajectory_energies']
         
+
         self.test_data = None
         # self.traj_train, self.forces_train = self.randomly_rotate(self.traj_train, self.forces_train)
 
@@ -102,7 +108,7 @@ class FandeDataModule(LightningDataModule):
             self,
             trajectory, 
             soap_params,
-            frames_per_batch=10): 
+            frames_per_batch=1): 
         """
         Calculate SOAP invariants without derivatives using librascal.
 
@@ -576,8 +582,30 @@ class FandeDataModule(LightningDataModule):
         return train_data_loaders
 
 
-    def prepare_train_data_loaders_energy():
+    def prepare_train_data_loaders_energy(self, trajectory=None, train_energies=None, energy_soap_hypers=None):
         """
         Prepare data loaders for training on ENERGIES. Currently data loaders are created within the FandeDataModule class and then passed to the energy model.
         """
-        raise NotImplementedError("Not implemented yet")
+        
+        if trajectory is not None:
+            trajectory = trajectory
+        else:
+            trajectory = self.traj_train
+
+        if energy_soap_hypers is not None:
+            energy_soap_hypers = energy_soap_hypers
+        else:
+            energy_soap_hypers = self.soap_hypers_energy
+
+        if train_energies is None:
+            energies = self.trajectory_energies_train
+        else:
+            energies = train_energies
+
+        train_X = self.calculate_invariants_librascal_no_derivatives(trajectory, energy_soap_hypers)
+        train_E = torch.tensor(energies, dtype=torch.float32)
+
+        train_dataset = TensorDataset(train_X, train_E)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
+
+        return train_loader

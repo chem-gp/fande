@@ -9,6 +9,7 @@ from gpytorch.kernels import (
     AdditiveKernel,
     MultitaskKernel,
     PolynomialKernel,
+    MaternKernel,
 )
 from gpytorch.means import ZeroMean, ConstantMean
 
@@ -18,7 +19,7 @@ from .my_kernels import CustomKernel
 
 from gpytorch.models import ExactGP
 
-from pytorch_lightning import LightningModule
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 from torch.optim import Adam
 
@@ -40,6 +41,7 @@ from .exact_gps import ExactGPModelEnergies
 
 from gpytorch.mlls import DeepApproximateMLL
 
+import fande
 
 
 class ExactGPModelEnergy(ExactGP, LightningModule):
@@ -118,7 +120,7 @@ class RawEnergyModel(LightningModule):
         self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
             self.likelihood, self.model)
         
-        self.atomic_group = atomic_group
+        # self.atomic_group = atomic_group
 
         ## Store the training parameters inside the model:
         self.train_x = train_x
@@ -225,7 +227,7 @@ class EnergyModel(LightningModule):
     def __init__(
             self,
             energy_model,
-            energy_train_data_loaders: list,
+            energy_train_data_loader,
             fdm=None, # specification of fdm is optional
             hparams=None,
             gpu_id=None
@@ -233,7 +235,7 @@ class EnergyModel(LightningModule):
         super().__init__()
 
         self.model = energy_model
-        self.train_data_loaders = energy_train_data_loaders
+        self.train_data_loader = energy_train_data_loader
 
         if gpu_id is not None:
             self.gpu_id = gpu_id
@@ -270,7 +272,7 @@ class EnergyModel(LightningModule):
         fande.logger.info("Training energy model.")
 
         print(f"Training energy model")
-        self.trainer.fit(model, self.train_data_loaders[idx])
+        self.trainer.fit(self.model, self.train_data_loader)
 
 
     def eval(self):
