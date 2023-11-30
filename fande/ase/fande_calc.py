@@ -125,6 +125,7 @@ class FandeCalc(Calculator):
 
 
         self.results["energy"] = self.energy
+        self.results["energy_variance"] = self.energy_variance
         self.results["energies"] = self.energies
         self.results["free_energy"] = self.energy
         self.results["forces"] = self.forces
@@ -158,6 +159,10 @@ class FandeCalc(Calculator):
     def get_potential_energy(self, atoms):
         self.update(atoms)
         return self.energy
+
+    def get_forces_variance(self, atoms):
+        self.update(atoms)
+        return self.energy_variance.copy()
 
     def get_forces_errors(self):
         return np.array(self.forces_errors)

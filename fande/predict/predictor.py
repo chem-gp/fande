@@ -27,6 +27,8 @@ import gpytorch
 
 from ase import Atoms
 
+import warnings
+
 class FandePredictor:
     def __init__(
         self,
@@ -317,7 +319,7 @@ class FandePredictor:
             n_atoms = len(snapshot)
             # X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
             # atomic_groups = self.fdm.atomic_groups_train
-            if self.last_calculated_snapshot.positions != snapshot.positions:
+            if np.any(self.last_calculated_snapshot.positions != snapshot.positions):
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
                 self.last_calculated_snapshot = snapshot
                 self.last_X, self.last_DX_grouped = X, DX_grouped
@@ -328,6 +330,12 @@ class FandePredictor:
             # predictions_grouped = []
             forces = np.zeros((n_atoms, 3))
             forces_variance = np.zeros((n_atoms, 3))
+
+            if self.ag_force_model is None:
+                # warnings.warn("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
+                print("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
+                return forces, forces_variance
+
             for idx, model in enumerate(self.ag_force_model.models):              
 
                 # res = trainer_f.predict(model, test_dl)[0]
@@ -356,8 +364,9 @@ class FandePredictor:
 
     def predict_energy_single_snapshot_r(self, snapshot):
 
+            # print(np.any(self.last_calculated_snapshot.positions != snapshot.positions))
             n_atoms = len(snapshot)            
-            if (self.last_calculated_snapshot.positions != snapshot.positions).any():
+            if np.any(self.last_calculated_snapshot.positions != snapshot.positions):
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
                 self.last_calculated_snapshot = snapshot.copy()
                 self.last_X, self.last_DX_grouped = X, DX_grouped
@@ -370,6 +379,7 @@ class FandePredictor:
             model = model.cuda()
             model.eval()
             x_sum = X.sum(axis=-2)
+            # print(x_sum)
 
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
                 res = model(x_sum.cuda()) # should you move to a device with specific id? for now it works...
