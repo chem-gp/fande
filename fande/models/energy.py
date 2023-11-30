@@ -44,6 +44,7 @@ from gpytorch.mlls import DeepApproximateMLL
 import fande
 
 
+
 class ExactGPModelEnergy(ExactGP, LightningModule):
     def __init__(
         self, train_X, train_Y, likelihood, soap_dim=None

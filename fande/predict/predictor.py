@@ -25,7 +25,7 @@ from fande import logger
 
 import gpytorch
 
-
+from ase import Atoms
 
 class FandePredictor:
     def __init__(
@@ -58,7 +58,7 @@ class FandePredictor:
 
         self.batch_size = 1000_000
 
-        self.last_calculated_snapshot = None
+        self.last_calculated_snapshot = Atoms()
         self.last_X = None
         self.last_DX_grouped = None
 
@@ -357,9 +357,9 @@ class FandePredictor:
     def predict_energy_single_snapshot_r(self, snapshot):
 
             n_atoms = len(snapshot)            
-            if self.last_calculated_snapshot.positions != snapshot.positions:
+            if (self.last_calculated_snapshot.positions != snapshot.positions).any():
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
-                self.last_calculated_snapshot = snapshot
+                self.last_calculated_snapshot = snapshot.copy()
                 self.last_X, self.last_DX_grouped = X, DX_grouped
             else:
                 X, DX_grouped = self.last_X, self.last_DX_grouped
@@ -372,7 +372,7 @@ class FandePredictor:
             x_sum = X.sum(axis=-2)
 
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                res = model(x_sum) # should you move to a device with specific id? for now it works...
+                res = model(x_sum.cuda()) # should you move to a device with specific id? for now it works...
     
             predicted_mean = res.mean.cpu().detach().numpy()
             predicted_variance = res.variance.cpu().detach().numpy()                        

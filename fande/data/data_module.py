@@ -322,7 +322,7 @@ class FandeDataModule(LightningDataModule):
         if atomic_groups == 'all':
             atomic_groups = [list(range(n_atoms))]
 
-       
+
         n_atomic_groups = len(atomic_groups)
 
 
