@@ -129,7 +129,7 @@ class RawEnergyModel(LightningModule):
         # self.id = id
 
         # self.num_epochs = 10
-        self.learning_rate = self.hparams['energy_model_hparams']
+        self.learning_rate = self.hparams['energy_model_hparams']['learning_rate']
         # self.precision = 32 
 
        
@@ -270,9 +270,9 @@ class EnergyModel(LightningModule):
         Train energy model.
         """
         fande.logger.info("Training energy model.")
-
         print(f"Training energy model")
         self.trainer.fit(self.model, self.train_data_loader)
+        return
 
 
     def eval(self):
