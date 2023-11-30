@@ -6,7 +6,7 @@ Fitting molecular Energies, Forces and Chemical shifts with scalable Gaussian Pr
 
 Project scope is for those doing research in probabilistic machine learning applied to chemical physics problems
 
-Currently fande uses [GPyTorch](https://github.com/cornellius-gp/gpytorch)/[PyTorch](https://github.com/pytorch/pytorch)/[Pyro](https://github.com/pyro-ppl/pyro) for ML modeling and [librascal](https://github.com/lab-cosmo/librascal) libraries for computing invariants.
+Currently fande uses [GPyTorch](https://github.com/cornellius-gp/gpytorch)/[PyTorch](https://github.com/pytorch/pytorch)/[Pyro](https://github.com/pyro-ppl/pyro) for ML modeling and [librascal](https://github.com/lab-cosmo/librascal) library for computing invariants.
 
 
 
