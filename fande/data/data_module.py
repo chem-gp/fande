@@ -603,6 +603,7 @@ class FandeDataModule(LightningDataModule):
             energies = train_energies
 
         train_X = self.calculate_invariants_librascal_no_derivatives(trajectory, energy_soap_hypers)
+        train_X = train_X.sum(axis=1)
         train_E = torch.tensor(energies, dtype=torch.float32)
 
         train_dataset = TensorDataset(train_X, train_E)
