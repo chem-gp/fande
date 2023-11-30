@@ -52,11 +52,15 @@ class FandePredictor:
         self.test_E = fdm.test_E
         self.test_F = fdm.test_F
 
-        self.test_traj = fdm.traj_test
+        # self.test_traj = fdm.traj_test
 
         self.n_atoms = 1
 
         self.batch_size = 1000_000
+
+        self.last_calculated_snapshot = None
+        self.last_X = None
+        self.last_DX_grouped = None
 
  
     def predict_and_plot_energies(self):
@@ -311,9 +315,14 @@ class FandePredictor:
     def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
             n_atoms = len(snapshot)
-            X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
-            atomic_groups = self.fdm.atomic_groups_train
-            # snap_DX = self.fdm.snap_DX
+            # X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+            # atomic_groups = self.fdm.atomic_groups_train
+            if self.last_calculated_snapshot.positions != snapshot.positions:
+                X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+                self.last_calculated_snapshot = snapshot
+                self.last_X, self.last_DX_grouped = X, DX_grouped
+            else:
+                X, DX_grouped = self.last_X, self.last_DX_grouped
 
             # print(snap_DX)
             # predictions_grouped = []
@@ -343,6 +352,34 @@ class FandePredictor:
             
 
             return forces, forces_variance
+
+
+    def predict_energy_single_snapshot_r(self, snapshot):
+
+            n_atoms = len(snapshot)            
+            if self.last_calculated_snapshot.positions != snapshot.positions:
+                X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+                self.last_calculated_snapshot = snapshot
+                self.last_X, self.last_DX_grouped = X, DX_grouped
+            else:
+                X, DX_grouped = self.last_X, self.last_DX_grouped
+
+            energy = 0.0
+            energy_variance = 0.0
+            model = self.energy_model
+            model = model.cuda()
+            model.eval()
+            x_sum = X.sum(axis=-2)
+
+            with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                res = model(x_sum) # should you move to a device with specific id? for now it works...
+    
+            predicted_mean = res.mean.cpu().detach().numpy()
+            predicted_variance = res.variance.cpu().detach().numpy()                        
+            energy = predicted_mean
+            energy_variance = predicted_variance        
+
+            return energy, energy_variance
 
 
     def test_errors(self, view_worst_atoms=False):

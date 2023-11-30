@@ -103,10 +103,13 @@ class FandeCalc(Calculator):
         # print("Calculating FORCES!")
 
         forces, forces_variance = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
-
         self.forces = forces
-
         self.forces_variance = forces_variance
+
+        energy, energy_variance = self.predictor.predict_energy_single_snapshot_r(self.atoms.copy())
+        self.energy = energy
+        self.energy_variance = energy_variance
+
 
         # comparing with supporting calculation
         if self.supporting_calc is not None:
