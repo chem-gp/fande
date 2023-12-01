@@ -227,7 +227,7 @@ class EnergyModel(LightningModule):
 
     def __init__(
             self,
-            energy_model,
+            # energy_model,
             energy_train_data_loader,
             fdm=None, # specification of fdm is optional
             hparams=None,
@@ -235,8 +235,15 @@ class EnergyModel(LightningModule):
                  ) -> None:
         super().__init__()
 
-        self.model = energy_model
         self.train_data_loader = energy_train_data_loader
+
+        raw_energy_model = RawEnergyModel(
+            train_x = energy_train_data_loader.dataset[:][0],
+            train_y = energy_train_data_loader.dataset[:][1],
+            hparams = hparams)
+
+        self.model = raw_energy_model
+
 
         if gpu_id is not None:
             self.gpu_id = gpu_id

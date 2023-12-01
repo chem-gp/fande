@@ -612,7 +612,7 @@ class FandeDataModule(LightningDataModule):
         return train_loader
 
 
-        def dataloaders_from_trajectory(
+    def dataloaders_from_trajectory(
             self,
             trajectory_energy,
             trajectory_forces,
@@ -620,6 +620,7 @@ class FandeDataModule(LightningDataModule):
             forces = None,
             atomic_groups = None,
             centers_positions = None,
+            derivatives_positions = None,
             energy_soap_hypers = None,
             forces_soap_hypers = None,
             total_forces_samples_per_group = 0,
@@ -636,10 +637,15 @@ class FandeDataModule(LightningDataModule):
                 forces_soap_hypers = self.soap_hypers
 
             if energies is None:
-                energies = [s.get_potential_energy() for s in trajectory_energy]
+                energies = [s.calc.get_potential_energy() for s in trajectory_energy]
+                self.emax = np.max(energies)
+                self.emin = np.min(energies)
+                energies = (energies - self.emin)/(self.emax - self.emin)
+                energies = np.array(energies)
 
             if forces is None:
-                forces = [s.get_forces() for s in trajectory_forces]
+                forces = [s.calc.get_forces() for s in trajectory_forces]
+                forces = np.array(forces)
 
             self.traj_train = trajectory_forces
             self.forces_train = forces
@@ -651,13 +657,14 @@ class FandeDataModule(LightningDataModule):
             X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
             # X_forces, DX_forces = self.calculate_invariants_librascal(trajectory_forces, forces_soap_hypers, calculation_context="train")
             self.calculate_invariants_librascal(
-                soap_params,
+                forces_soap_hypers,
                 atomic_groups = atomic_groups,
                 centers_positions = centers_positions, 
                 derivatives_positions = derivatives_positions,
                 same_centers_derivatives=True,
                 frames_per_batch=1,
                 calculation_context="train")
+
 
             X_forces = self.train_X
             DX_forces = self.train_DX
@@ -715,4 +722,4 @@ class FandeDataModule(LightningDataModule):
 
             ##################################################
 
-            return train_loader_energy, train_data_loaders
+            return train_loader_energy, train_data_loaders_forces
