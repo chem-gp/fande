@@ -612,7 +612,6 @@ class FandeDataModule(LightningDataModule):
         return train_loader
 
 
-
         def dataloaders_from_trajectory(
             self,
             trajectory_energy,
@@ -620,6 +619,7 @@ class FandeDataModule(LightningDataModule):
             energies = None,
             forces = None,
             atomic_groups = None,
+            centers_positions = None,
             energy_soap_hypers = None,
             forces_soap_hypers = None,
             total_forces_samples_per_group = 0,
@@ -641,26 +641,42 @@ class FandeDataModule(LightningDataModule):
             if forces is None:
                 forces = [s.get_forces() for s in trajectory_forces]
 
-            if energy_soap_hypers != forces_soap_hypers:
-                X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
-                X_forces, DX_forces = self.calculate_invariants_librascal_no_derivatives(trajectory_forces, forces_soap_hypers)
-            else:
-                X_forces, DX_forces = self.calculate_invariants_librascal_no_derivatives(trajectory_forces, forces_soap_hypers)
-                X_energy = X_forces
+            self.traj_train = trajectory_forces
+            self.forces_train = forces
+            self.atomic_groups_train = atomic_groups
+            self.centers_positions_train = centers_positions
+            self.derivatives_positions_train = derivatives_positions
+
+
+            X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
+            # X_forces, DX_forces = self.calculate_invariants_librascal(trajectory_forces, forces_soap_hypers, calculation_context="train")
+            self.calculate_invariants_librascal(
+                soap_params,
+                atomic_groups = atomic_groups,
+                centers_positions = centers_positions, 
+                derivatives_positions = derivatives_positions,
+                same_centers_derivatives=True,
+                frames_per_batch=1,
+                calculation_context="train")
+
+            X_forces = self.train_X
+            DX_forces = self.train_DX
+            F_forces = self.train_F
+
 
             X_energy = X_energy.sum(axis=1)
             train_E = torch.tensor(energies, dtype=torch.float32)
             train_dataset_energy = TensorDataset(X_energy, train_E)
             train_loader_energy = DataLoader(train_dataset_energy, batch_size=self.batch_size)
 
-            #################### Forces: ####################
+            #################### Forces sampling: ####################
 
             train_indices = []
 
             total_samples_per_group = total_forces_samples_per_group
             high_force_samples_per_group = high_force_samples_per_group
 
-            train_data_loaders = []
+            train_data_loaders_forces = []
             for idx in range(len(self.atomic_groups_train)):
 
                 total_training_random_samples = total_samples_per_group[idx]
@@ -689,11 +705,14 @@ class FandeDataModule(LightningDataModule):
 
                 train_dataset = TensorDataset(self.train_DX[idx][indices], self.train_F[idx][indices])
                 train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
-                train_data_loaders.append(train_loader)
+                train_data_loaders_forces.append(train_loader)
 
                 print("Dataloader for group {} created".format(idx))
                 print("Number of samples in dataloader: {}".format(len(train_dataset)) )
             
             self.train_indices = train_indices  
 
+
             ##################################################
+
+            return train_loader_energy, train_data_loaders
