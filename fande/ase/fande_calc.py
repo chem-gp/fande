@@ -39,7 +39,6 @@ class FandeCalc(Calculator):
 
     def __init__(self, 
                  predictor: FandePredictor,
-                 forces_errors_plot_file=None, 
                  **kwargs):
         Calculator.__init__(self, **kwargs)
 
@@ -54,7 +53,6 @@ class FandeCalc(Calculator):
         self.supporting_calc = None
         self.forces_errors = []
         self.forces_errors_max = []
-        self.forces_errors_plot_file = forces_errors_plot_file
 
 
 
@@ -241,6 +239,12 @@ class FandeCalc(Calculator):
         return
 
 
+    def load_predictor(self, filename):
+        """
+        Load predictor from file.
+        """
+        self.predictor = torch.load(filename)
+        return
 
 
 
