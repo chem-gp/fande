@@ -610,3 +610,90 @@ class FandeDataModule(LightningDataModule):
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
 
         return train_loader
+
+
+
+        def dataloaders_from_trajectory(
+            self,
+            trajectory_energy,
+            trajectory_forces,
+            energies = None,
+            forces = None,
+            atomic_groups = None,
+            energy_soap_hypers = None,
+            forces_soap_hypers = None,
+            total_forces_samples_per_group = 0,
+            high_force_samples_per_group = 0,
+            ):
+
+            if atomic_groups is None:
+                atomic_groups = self.atomic_groups_train
+
+            if energy_soap_hypers is None:
+                energy_soap_hypers = self.soap_hypers_energy
+
+            if forces_soap_hypers is None:
+                forces_soap_hypers = self.soap_hypers
+
+            if energies is None:
+                energies = [s.get_potential_energy() for s in trajectory_energy]
+
+            if forces is None:
+                forces = [s.get_forces() for s in trajectory_forces]
+
+            if energy_soap_hypers != forces_soap_hypers:
+                X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
+                X_forces, DX_forces = self.calculate_invariants_librascal_no_derivatives(trajectory_forces, forces_soap_hypers)
+            else:
+                X_forces, DX_forces = self.calculate_invariants_librascal_no_derivatives(trajectory_forces, forces_soap_hypers)
+                X_energy = X_forces
+
+            X_energy = X_energy.sum(axis=1)
+            train_E = torch.tensor(energies, dtype=torch.float32)
+            train_dataset_energy = TensorDataset(X_energy, train_E)
+            train_loader_energy = DataLoader(train_dataset_energy, batch_size=self.batch_size)
+
+            #################### Forces: ####################
+
+            train_indices = []
+
+            total_samples_per_group = total_forces_samples_per_group
+            high_force_samples_per_group = high_force_samples_per_group
+
+            train_data_loaders = []
+            for idx in range(len(self.atomic_groups_train)):
+
+                total_training_random_samples = total_samples_per_group[idx]
+                high_force_samples = high_force_samples_per_group[idx]
+                random_samples = total_training_random_samples - high_force_samples
+                total_train_samples = self.train_F[idx].shape[0]
+
+
+                if total_training_random_samples is None or total_training_random_samples == 'all' or total_train_samples < total_training_random_samples:
+                    ind_slice = np.sort( np.arange(0, self.train_F[idx].shape[0]) )
+                    indices = ind_slice
+                    print(f"Taking ALL {total_train_samples} samples for group {idx}")
+                else:
+                    indices_high_force = torch.concat( 
+                        (torch.topk(self.train_F[idx], high_force_samples//2, largest=True)[1],  
+                        torch.topk(self.train_F[idx], high_force_samples//2, largest=False)[1]) ).cpu().numpy()
+
+                    indices_without_high_force = np.setdiff1d(  np.arange(0, self.train_F[idx].shape[0]), indices_high_force    )
+
+                    ind_slice = np.sort(  np.random.choice(indices_without_high_force, random_samples, replace=False) )
+    
+                    indices = np.concatenate((ind_slice, indices_high_force))
+                    indices = np.unique(indices)
+
+                train_indices.append(indices.tolist())
+
+                train_dataset = TensorDataset(self.train_DX[idx][indices], self.train_F[idx][indices])
+                train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
+                train_data_loaders.append(train_loader)
+
+                print("Dataloader for group {} created".format(idx))
+                print("Number of samples in dataloader: {}".format(len(train_dataset)) )
+            
+            self.train_indices = train_indices  
+
+            ##################################################
