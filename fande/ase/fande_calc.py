@@ -99,14 +99,18 @@ class FandeCalc(Calculator):
         forces = np.zeros((natoms, 3))
         stresses = np.zeros((natoms, 3, 3))
 
+        atomic_groups = self.predictor.fdm.atomic_groups
+
         # forces, forces_var = self.predictor.predict_forces_single(self.atoms)
         # print("Calculating FORCES!")
 
-        forces, forces_variance = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy())
+        forces, forces_variance = self.predictor.predict_forces_single_snapshot_r(self.atoms.copy(), atomic_groups=atomic_groups)
         self.forces = forces
         self.forces_variance = forces_variance
 
         energy, energy_variance = self.predictor.predict_energy_single_snapshot_r(self.atoms.copy())
+        emax,emin = self.predictor.fdm.emax, self.predictor.fdm.emin
+        energy = energy*(emax-emin) + emin
         self.energy = energy
         self.energy_variance = energy_variance
 

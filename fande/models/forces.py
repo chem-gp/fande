@@ -390,6 +390,13 @@ class GroupModelForces(LightningModule):
 
         fande.logger.info("Training force models")
 
+        # import joblib
+        # def train_single_model(idx):
+        #     print(f"Training force model {idx} (Total {len(self.models)} models)")
+        #     self.trainers[idx].fit(self.models[idx], self.train_data_loaders[idx])
+        #     return
+        # joblib.Parallel(n_jobs=len(self.models),prefer="threads")(joblib.delayed(train_single_model)(idx) for idx in range(len(self.models)))
+
         for idx, model in enumerate(self.models):
             print(f"Training force model {idx} (Total {len(self.models)} models)")
             self.trainers[idx].fit(model, self.train_data_loaders[idx])

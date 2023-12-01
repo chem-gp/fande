@@ -149,7 +149,7 @@ class FandeDataModule(LightningDataModule):
                     #                    accuracy=1.0e-05
                     #                 )
                     #             ),
-                    compute_gradients=True,
+                    compute_gradients=False,
                     expansion_by_species_method='structure wise'
                     )
     
@@ -655,6 +655,7 @@ class FandeDataModule(LightningDataModule):
 
 
             X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
+            print("invariants for energy fitting calculated")
             # X_forces, DX_forces = self.calculate_invariants_librascal(trajectory_forces, forces_soap_hypers, calculation_context="train")
             self.calculate_invariants_librascal(
                 forces_soap_hypers,
@@ -664,7 +665,7 @@ class FandeDataModule(LightningDataModule):
                 same_centers_derivatives=True,
                 frames_per_batch=1,
                 calculation_context="train")
-
+            print("invariants for forces fitting calculated")
 
             X_forces = self.train_X
             DX_forces = self.train_DX

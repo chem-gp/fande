@@ -333,7 +333,7 @@ class FandePredictor:
 
             if self.ag_force_model is None:
                 # warnings.warn("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
-                print("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
+                # print("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
                 return forces, forces_variance
 
             for idx, model in enumerate(self.ag_force_model.models):              
@@ -376,6 +376,13 @@ class FandePredictor:
             energy = 0.0
             energy_variance = 0.0
             model = self.energy_model
+
+            if model is None:
+                # warnings.warn("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
+                # print("Energy model is not defined. Cannot predict energy. Returning zeros.")
+                return energy, energy_variance
+
+
             model = model.cuda()
             model.eval()
             x_sum = X.sum(axis=-2)
