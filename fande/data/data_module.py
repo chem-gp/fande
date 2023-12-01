@@ -174,6 +174,11 @@ class FandeDataModule(LightningDataModule):
         # F_np_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
         # grad_info_sub_batched = [[] * len(frames_batches) for i in range(n_atomic_groups)]
 
+        tqdm_ = lambda x: x
+        if calculation_context == "train":
+            self.n_atoms = n_atoms
+            tqdm_ = tqdm
+
         for ind_b, batch in enumerate(tqdm(frames_batches)):
             traj_b = batch['traj']
             # forces_b = batch['forces']
@@ -481,9 +486,17 @@ class FandeDataModule(LightningDataModule):
     def calculate_snapshot_invariants_librascal(
             self,
             snapshot: ase.Atoms, 
-            same_centers_derivatives=True):
+            same_centers_derivatives=True,
+            no_derivatives=False,):
 
         traj = [snapshot]
+
+        # if no_derivatives:
+        #     snap_X = self.calculate_invariants_librascal_no_derivatives(
+        #         trajectory=traj, 
+        #         soap_params=self.soap_hypers_energy)
+        #     return snap_X
+
         snap_X, snap_DX = self.calculate_invariants_librascal(
             trajectory=traj, 
             same_centers_derivatives=same_centers_derivatives, 

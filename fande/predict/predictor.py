@@ -320,9 +320,11 @@ class FandePredictor:
             # X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
             # atomic_groups = self.fdm.atomic_groups_train
             if np.any(self.last_calculated_snapshot.positions != snapshot.positions):
+                # print("Start invariants forces...")
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
                 self.last_calculated_snapshot = snapshot
                 self.last_X, self.last_DX_grouped = X, DX_grouped
+                # print("End invariants forces...")
             else:
                 X, DX_grouped = self.last_X, self.last_DX_grouped
 
@@ -365,12 +367,22 @@ class FandePredictor:
     def predict_energy_single_snapshot_r(self, snapshot):
 
             # print(np.any(self.last_calculated_snapshot.positions != snapshot.positions))
-            n_atoms = len(snapshot)            
-            if np.any(self.last_calculated_snapshot.positions != snapshot.positions):
+            n_atoms = len(snapshot) 
+
+            # print((self.last_calculated_snapshot == snapshot))
+            # from ase.visualize import view
+            # view([self.last_calculated_snapshot, snapshot])
+            snapshot.wrap(eps=1e-8)
+            # print( np.allclose(self.last_calculated_snapshot.positions, snapshot.positions))
+
+            if not np.allclose(self.last_calculated_snapshot.positions, snapshot.positions):
+                # print("Start invariants energy...")
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
                 self.last_calculated_snapshot = snapshot.copy()
                 self.last_X, self.last_DX_grouped = X, DX_grouped
+                # print("End invariants energy...")
             else:
+                # print("proceeding without invariants energy...")
                 X, DX_grouped = self.last_X, self.last_DX_grouped
 
             energy = 0.0
