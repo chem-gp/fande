@@ -64,6 +64,8 @@ class FandePredictor:
         self.last_X = None
         self.last_DX_grouped = None
 
+        self.device = "gpu"
+
  
     def predict_and_plot_energies(self):
 
@@ -341,10 +343,18 @@ class FandePredictor:
             for idx, model in enumerate(self.ag_force_model.models):              
 
                 # res = trainer_f.predict(model, test_dl)[0]
-                model = model.cuda()
-                model.eval()
-                with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                    res = model(DX_grouped[idx].cuda()) # should you move to a device with specific id? for now it works...
+
+                if self.device == "gpu":
+                    model = model.cuda()
+                    model.eval()
+                    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                        res = model(DX_grouped[idx].cuda()) # should you move to a device with specific id? for now it works...
+                
+                if self.device == "cpu":
+                    model = model.cpu()
+                    model.eval()
+                    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                        res = model(DX_grouped[idx].cpu())
         
                 # predictions_torch = res.mean
 
@@ -394,15 +404,35 @@ class FandePredictor:
                 # print("Energy model is not defined. Cannot predict energy. Returning zeros.")
                 return energy, energy_variance
 
+            # print("moving models to devices...")
+            if self.device == "gpu":
+                model = model.cuda()
 
-            model = model.cuda()
+            if self.device == "cpu":
+                model = model.cpu()
+
             model.eval()
             x_sum = X.sum(axis=-2)
+
+            if self.device == "gpu":
+                x_sum = x_sum.cuda()
+            if self.device == "cpu":
+                x_sum = x_sum.cpu()
+
             # print(x_sum)
+            # print("all models moved...")
+            # print(x_sum.device)
+            # print(model.device)
+            # print(model(x_sum))
+            # self.x_sum = x_sum
+            ############################
 
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                res = model(x_sum.cuda()) # should you move to a device with specific id? for now it works...
+                res = model(x_sum) # should you move to a device with specific id? for now it works...
     
+
+            print(res.mean.device)
+
             predicted_mean = res.mean.cpu().detach().numpy()
             predicted_variance = res.variance.cpu().detach().numpy()                        
             energy = predicted_mean

@@ -108,6 +108,7 @@ class FandeDataModule(LightningDataModule):
             self,
             trajectory, 
             soap_params,
+            calculation_context=None, # train/test/production contexts
             frames_per_batch=1): 
         """
         Calculate SOAP invariants without derivatives using librascal.
@@ -667,7 +668,7 @@ class FandeDataModule(LightningDataModule):
             self.derivatives_positions_train = derivatives_positions
 
 
-            X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers)
+            X_energy = self.calculate_invariants_librascal_no_derivatives(trajectory_energy, energy_soap_hypers, calculation_context="train")
             print("invariants for energy fitting calculated")
             # X_forces, DX_forces = self.calculate_invariants_librascal(trajectory_forces, forces_soap_hypers, calculation_context="train")
             self.calculate_invariants_librascal(
