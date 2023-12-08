@@ -115,17 +115,21 @@ class RawEnergyModel(LightningModule):
         self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
         if train_x is not None:
             self.soap_dim = train_x.shape[-1]  
-        # soap_dim = train_x.shape[-1]    
-        self.model = ExactGPModelEnergy(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)    
+        # soap_dim = train_x.shape[-1]
+
+        ## Store the training parameters inside the model:
+        self.train_x = train_x
+        self.train_y = train_y
+
+            
+        self.model = ExactGPModelEnergy(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
         # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
         self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
             self.likelihood, self.model)
         
         # self.atomic_group = atomic_group
 
-        ## Store the training parameters inside the model:
-        self.train_x = train_x
-        self.train_y = train_y
+
 
         # self.id = id
 
