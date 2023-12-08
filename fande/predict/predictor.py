@@ -64,7 +64,7 @@ class FandePredictor:
 
         self.batch_size = 1000_000
 
-        self.last_calculated_snapshot = Atoms()
+        self.last_calculated_snapshot = self.fdm.traj_train[0]
         self.last_X = None
         self.last_DX_grouped = None
 
@@ -322,14 +322,21 @@ class FandePredictor:
 
     def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
-            n_atoms = len(snapshot)
-            # X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
-            # atomic_groups = self.fdm.atomic_groups_train
-            if np.any(self.last_calculated_snapshot.positions != snapshot.positions):
+            # print(np.any(self.last_calculated_snapshot.positions != snapshot.positions))
+            n_atoms = len(snapshot) 
+            snapshot.wrap(eps=1e-8)
+            # print( np.allclose(self.last_calculated_snapshot.positions, snapshot.positions))
+
+            if not np.allclose(self.last_calculated_snapshot.positions, snapshot.positions):
                 # print("Start invariants forces...")
+                # record start time
+                time_start = time.time()
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
+                # record end time
+                time_invariants = time.time()
                 self.last_calculated_snapshot = snapshot
                 self.last_X, self.last_DX_grouped = X, DX_grouped
+
                 # print("End invariants forces...")
             else:
                 X, DX_grouped = self.last_X, self.last_DX_grouped
@@ -338,6 +345,10 @@ class FandePredictor:
             # predictions_grouped = []
             forces = np.zeros((n_atoms, 3))
             forces_variance = np.zeros((n_atoms, 3))
+
+            time_start_prediction = time.time()
+            
+            print("Time for invariants (call from forces): ", (time_invariants - time_start) * 1000)
 
             if self.ag_force_model is None:
                 # warnings.warn("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
@@ -399,19 +410,19 @@ class FandePredictor:
             snapshot.wrap(eps=1e-8)
             # print( np.allclose(self.last_calculated_snapshot.positions, snapshot.positions))
 
+            # record start time
+            time_start = time.time()
+
             if not np.allclose(self.last_calculated_snapshot.positions, snapshot.positions):
                 # print("Start invariants energy...")
-                # record start time
-                time_start = time.time()
                 X, DX_grouped = self.fdm.calculate_snapshot_invariants_librascal(snapshot)
-                # record end time
-                time_invariants = time.time()
-
                 self.last_calculated_snapshot = snapshot.copy()
                 self.last_X, self.last_DX_grouped = X, DX_grouped
                 # print("End invariants energy...")
             else:
                 X, DX_grouped = self.last_X, self.last_DX_grouped
+
+            time_invariants = time.time()
 
             energy = 0.0
             energy_variance = 0.0
@@ -429,6 +440,7 @@ class FandePredictor:
             if model.device != self.energy_model_device:
                 remove_cache_energy_model = True
 
+            print("Energy model device: ", self.energy_model_device)
             model = model.to(self.energy_model_device)
             x_sum = X.sum(axis=-2).to(self.energy_model_device)
             
@@ -451,6 +463,7 @@ class FandePredictor:
 
             time_end = time.time()
 
+            print("Energy model summary: ")
             print("Time invariants: ", (time_invariants - time_start) * 1000)
             print("Time prediction: ", (time_end_prediction - time_start_prediction)*1000)
             print("Time moving on device: ", (time_end - time_end_prediction)*1000)
@@ -670,3 +683,16 @@ class FandePredictor:
     #     del atoms_
 
     #     return res_
+
+    def move_models_to_device(self, device):
+        #to add: run .train() and move training data...
+        self.ag_force_model = self.ag_force_model.to(device)
+        self.energy_model = self.energy_model.to(device)
+        return
+
+
+    def empty_cuda_cache(self):
+        import gc
+        torch.cuda.empty_cache()
+        gc.collect()
+        return
