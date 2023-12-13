@@ -440,7 +440,7 @@ class FandePredictor:
             if model.device != self.energy_model_device:
                 remove_cache_energy_model = True
 
-            print("Energy model device: ", self.energy_model_device)
+            print("Energy model device: ", self.energy_model.device)
             model = model.to(self.energy_model_device)
             x_sum = X.sum(axis=-2).to(self.energy_model_device)
             
@@ -686,6 +686,9 @@ class FandePredictor:
 
     def move_models_to_device(self, device):
         #to add: move also ag_models to device...
+
+        self.energy_model_device = device
+
         self.energy_model = self.energy_model.to(device)
         self.energy_model.model.likelihood = self.energy_model.model.likelihood.to(device)
         self.energy_model.model.model = self.energy_model.model.model.to(device)
