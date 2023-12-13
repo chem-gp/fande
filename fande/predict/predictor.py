@@ -53,10 +53,10 @@ class FandePredictor:
         self.ag_force_model_devices = [0]
 
 
-        self.test_X = fdm.test_X
-        self.test_DX = fdm.test_DX
-        self.test_E = fdm.test_E
-        self.test_F = fdm.test_F
+        # self.test_X = fdm.test_X
+        # self.test_DX = fdm.test_DX
+        # self.test_E = fdm.test_E
+        # self.test_F = fdm.test_F
 
 
 
