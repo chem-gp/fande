@@ -685,9 +685,14 @@ class FandePredictor:
     #     return res_
 
     def move_models_to_device(self, device):
-        #to add: run .train() and move training data...
-        self.ag_force_model = self.ag_force_model.to(device)
+        #to add: move also ag_models to device...
         self.energy_model = self.energy_model.to(device)
+        self.energy_model.model.likelihood = self.energy_model.model.likelihood.to(device)
+        self.energy_model.model.model = self.energy_model.model.model.to(device)
+        self.energy_model.model.model.train()
+        self.energy_model.model.likelihood.train()
+        self.energy_model.model.model.eval()
+        self.energy_model.model.likelihood.eval()
         return
 
 
