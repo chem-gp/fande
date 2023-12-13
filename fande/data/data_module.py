@@ -189,6 +189,11 @@ class FandeDataModule(LightningDataModule):
             soap_array = managers.get_features(soap)
             X_np_batched.append(soap_array)
 
+
+        # print("Converting from list to numpy array...")
+        X_np_batched = np.concatenate(X_np_batched, axis=0)
+        # print("Converting from numpy array to torch tensor...")
+
         X = torch.tensor(X_np_batched,dtype=torch.float32)
 
 
@@ -438,6 +443,10 @@ class FandeDataModule(LightningDataModule):
         DX = [torch.tensor(DX_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
         F = [torch.tensor(F_np_grouped[i], dtype=torch.float32) for i in range(n_atomic_groups)]
         
+
+        # print("Converting from list to numpy array...")
+        X_np_batched = np.concatenate(X_np_batched, axis=0)
+        # print("Converting from numpy array to torch tensor...")
         X = torch.tensor(X_np_batched,dtype=torch.float32)
 
         if calculation_context == "train":
