@@ -191,7 +191,9 @@ class FandeDataModule(LightningDataModule):
 
 
         # print("Converting from list to numpy array...")
-        X_np_batched = np.concatenate(X_np_batched, axis=0)
+        # print("shape of a single batch ", X_np_batched[0].shape)
+        X_np_batched = np.array(X_np_batched)
+        # print("Shape of X_np_batched ", X_np_batched.shape)
         # print("Converting from numpy array to torch tensor...")
 
         X = torch.tensor(X_np_batched,dtype=torch.float32)
@@ -445,7 +447,7 @@ class FandeDataModule(LightningDataModule):
         
 
         # print("Converting from list to numpy array...")
-        X_np_batched = np.concatenate(X_np_batched, axis=0)
+        X_np_batched = np.array(X_np_batched)
         # print("Converting from numpy array to torch tensor...")
         X = torch.tensor(X_np_batched,dtype=torch.float32)
 
@@ -697,6 +699,10 @@ class FandeDataModule(LightningDataModule):
 
             X_energy = X_energy.sum(axis=1)
             train_E = torch.tensor(energies, dtype=torch.float32)
+
+            print(X_energy.shape)
+            print(train_E.shape)
+
             train_dataset_energy = TensorDataset(X_energy, train_E)
             train_loader_energy = DataLoader(train_dataset_energy, batch_size=self.batch_size)
 
