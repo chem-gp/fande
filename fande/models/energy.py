@@ -126,6 +126,7 @@ class RawEnergyModel(LightningModule):
         elif self.hparams['energy_model_hparams']['model_type'] == "variational_inducing_points":
             mll_beta = 0.1
             inducing_points = self.train_x[0:100]
+            print("Training with inducing points: ", inducing_points.shape)
             self.model = SVGPModelEnergies(inducing_points=inducing_points)
             self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
             self.mll = gpytorch.mlls.PredictiveLogLikelihood( self.likelihood, self.model, num_data=self.train_y.size(0), beta=mll_beta )
