@@ -632,7 +632,7 @@ class FandeDataModule(LightningDataModule):
         train_E = torch.tensor(energies, dtype=torch.float32)
 
         train_dataset = TensorDataset(train_X, train_E)
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size)#, num_workers=2, pin_memory=True)
 
         return train_loader
 

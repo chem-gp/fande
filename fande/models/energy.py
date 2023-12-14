@@ -22,6 +22,7 @@ from gpytorch.models import ExactGP
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 from torch.optim import Adam
+from torch.optim.lr_scheduler import MultiStepLR
 
 
 from gpytorch.models import ApproximateGP
@@ -185,6 +186,9 @@ class RawEnergyModel(LightningModule):
         '''defines model optimizer'''
             # Use the adam optimizer
         optimizer = Adam(self.parameters(), lr=self.learning_rate)
+
+        # scheduler = MultiStepLR(optimizer, milestones=[100, 1_000, 10_000], gamma=0.1)
+        # return [optimizer], [scheduler]
         return optimizer
 
     # def validation_step(self, batch, batch_idx):
@@ -245,10 +249,11 @@ class EnergyModel(LightningModule):
 
         trainer = Trainer(
                 accelerator='gpu',
-                # devices=1, 
+                # devices=2, 
                 devices=[self.gpu_id], 
                 max_epochs=self.energy_model_hparams['num_epochs'], 
-                precision=32
+                precision=32,
+                # strategy="deepspeed"
                 )
 
         self.trainer = trainer

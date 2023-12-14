@@ -68,11 +68,12 @@ class SVGPModelEnergies(ApproximateGP):
             # variational_strategy = BatchDecoupledVariationalStrategy(self, inducing_points, variational_distribution, learn_inducing_locations=True, mean_var_batch_dim=-1)
 
             super().__init__(variational_strategy)
-            self.mean_module = gpytorch.means.ConstantMean()
-            # self.mean_module = gpytorch.means.ZeroMean()
+            # self.mean_module = gpytorch.means.ConstantMean()
+            self.mean_module = gpytorch.means.ZeroMean()
             # self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(ard_num_dims=720))
             soap_dim = inducing_points.size(-1)
-            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=soap_dim))
+            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(ard_num_dims=soap_dim))
+            # self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=soap_dim))
             # self.covar_module = gpytorch.kernels.LinearKernel()
 
         def forward(self, x):
