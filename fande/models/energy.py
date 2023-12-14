@@ -153,25 +153,25 @@ class RawEnergyModel(LightningModule):
         loss = -self.mll(output, target)
         # wandb.log({f"loss_{self.id}": loss})
         # wandb.log({"loss": loss})
-        # self.log("loss", loss, prog_bar=True, on_step=True, on_epoch=True) # unfortunately slows down the training
+        self.log("loss", loss, prog_bar=True) # unfortunately slows down the training
         return {'loss': loss}
 
-    def on_train_step_end(self, outputs) -> None:
-        # loss = sum(output['loss'] for output in outputs) / len(outputs)
-        print("loss output...")
+    # def on_train_step_end(self, outputs) -> None:
+    #     # loss = sum(output['loss'] for output in outputs) / len(outputs)
+    #     # print("loss output...")
 
-    # def training_step(self, batch, batch_idx):
-    #     '''needs to return a loss from a single batch'''
-    #     # _, loss, acc = self._get_preds_loss_accuracy(batch)
-    #     train_x, train_y = batch
+    # # def training_step(self, batch, batch_idx):
+    # #     '''needs to return a loss from a single batch'''
+    # #     # _, loss, acc = self._get_preds_loss_accuracy(batch)
+    # #     train_x, train_y = batch
 
-    #     output = self(train_x)
-    #     loss = -self.mll(output, train_y) ##???
+    # #     output = self(train_x)
+    # #     loss = -self.mll(output, train_y) ##???
 
-    #     # Log loss and metric
-    #     # self.log('train_loss', loss)
-    #     # self.log('train_accuracy', acc)
-    #     return loss
+    # #     # Log loss and metric
+    # #     # self.log('train_loss, loss)
+    # #     # self.log('train_accuracy', acc)
+    # #     return loss
 
     def test_step(self, batch, batch_idx):
         """Compute testing loss."""
@@ -253,7 +253,8 @@ class EnergyModel(LightningModule):
                 devices=[self.gpu_id], 
                 max_epochs=self.energy_model_hparams['num_epochs'], 
                 precision=32,
-                # strategy="deepspeed"
+                # strategy="deepspeed",
+                log_every_n_steps=1000
                 )
 
         self.trainer = trainer
