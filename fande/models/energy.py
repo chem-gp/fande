@@ -33,9 +33,9 @@ from gpytorch.variational import (
 from gpytorch.variational import VariationalStrategy
 
 
-from .exact_gps import ExactGPModelEnergies
+# from .exact_gps import ExactGPModelEnergies
 
-# from .sv_gps import SVGPModelEnergies
+from .sv_gps import SVGPModelEnergies
 
 # from .deep_gps import DeepGP_Model
 
@@ -100,11 +100,8 @@ class RawEnergyModel(LightningModule):
         """
         super().__init__()
 
-        # self.hparams = hparams
-
         if hparams is not None:
-            self.hparams.update(hparams)
-        
+            self.hparams.update(hparams)        
         # self.save_hyperparameters()
         #add prior for badly conditioned datasets
         # this prior can affect predictions badly
@@ -115,56 +112,46 @@ class RawEnergyModel(LightningModule):
         self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
         if train_x is not None:
             self.soap_dim = train_x.shape[-1]  
-        # soap_dim = train_x.shape[-1]
 
         ## Store the training parameters inside the model:
         self.train_x = train_x
         self.train_y = train_y
 
-            
-        self.model = ExactGPModelEnergy(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
-        # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
-        self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
-            self.likelihood, self.model)
-        
-        # self.atomic_group = atomic_group
+        if self.hparams['energy_model_hparams']['model_type'] == "exact":
+            self.model = ExactGPModelEnergy(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
+            # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
+            self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
+                self.likelihood, self.model)
+
+        elif self.hparams['energy_model_hparams']['model_type'] == "variational_inducing_points":
+            mll_beta = 0.1
+            inducing_points = self.train_x[0:100]
+            self.model = SVGPModelEnergies(inducing_points=inducing_points)
+            self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
+            self.mll = gpytorch.mlls.PredictiveLogLikelihood( self.likelihood, self.model, num_data=self.train_y.size(0), beta=mll_beta )
 
 
-
-        # self.id = id
-
-        # self.num_epochs = 10
         self.learning_rate = self.hparams['energy_model_hparams']['learning_rate']
-        # self.precision = 32 
-
-       
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
-
-        print("RawEnergyModel initialized")
 
 
    
     def forward(self, input_):
         """Compute prediction."""
-
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             output = self.model(input_)           
             res = self.likelihood(output) #.mean.cpu().detach().numpy()
-
         return res
 
 
     def training_step(self, batch, batch_idx: int , dataloader_idx: int = None):
         """Compute training loss."""
-
         input_, target = batch
         output = self.model(input_)
-
         loss = -self.mll(output, target)
         # wandb.log({f"loss_{self.id}": loss})
         # wandb.log({"loss": loss})
         # self.log("loss", loss, prog_bar=True, on_step=True, on_epoch=True) # unfortunately slows down the training
-
         return {'loss': loss}
 
     def on_train_step_end(self, outputs) -> None:
@@ -231,12 +218,10 @@ class EnergyModel(LightningModule):
 
     def __init__(
             self,
-            # energy_model,
             energy_train_data_loader,
-            fdm=None, # specification of fdm is optional
+            fdm=None, 
             hparams=None,
-            gpu_id=None
-                 ) -> None:
+            gpu_id=None):
         super().__init__()
 
         self.train_data_loader = energy_train_data_loader

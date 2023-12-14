@@ -68,258 +68,7 @@ class FandePredictor:
         self.last_X = None
         self.last_DX_grouped = None
 
-
-
  
-    # def predict_and_plot_energies(self):
-
-    #     raise NotImplementedError
-
-    #     test_x_e, test_y_e = get_vectors_e(
-    #         self.test_X, self.test_F, self.n_molecules, self.n_atoms
-    #     )
-
-    #     test = TensorDataset(test_x_e, test_y_e)
-    #     test_dl = DataLoader(test, batch_size=self.batch_size)
-
-    #     res = self.trainer_e.predict(self.model_e, test_dl)[0]
-
-    #     predictions_torch = res.mean
-    #     variances_torch = res.variance
-
-    #     predictions = res.mean.cpu().detach().numpy()
-    #     actual_values = test_y_e.cpu().detach().numpy()
-    #     plt.rcParams["figure.figsize"] = (30, 10)
-    #     plt.plot(predictions, color="blue", label="predictions", linewidth=0.4)
-    #     plt.plot(actual_values, color="red", label="actual values", linewidth=0.4)
-    #     plt.legend()
-    #     plt.ylabel("Energy")
-    #     plt.xlabel("Index")
-    #     # plt.xlim(3000,4000)
-    #     # plt.ylim(0, 1.0)
-    #     # wandb.log({"all prediction": wandb.Image(plt)})
-    #     plt.show()
-
-    #     self.e_mae = torchmetrics.functional.mean_absolute_error(
-    #         predictions_torch.cpu(), test_y_e.cpu()
-    #     )
-    #     self.e_mse = torchmetrics.functional.mean_squared_error(
-    #         predictions_torch.cpu(), test_y_e.cpu()
-    #     )
-    #     print("\nEnergies MAE: %5.4f" % self.e_mae.item())
-    #     print("Energies MSE: %5.4f" % self.e_mse.item())
-
-    #     return
-
-    # def predict_and_plot_forces(self):
-
-    #     # if self.hparams["device"] == "gpu":
-    #     #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
-
-    #     test = TensorDataset(self.test_DX, self.test_F)
-    #     test_dl = DataLoader(test, batch_size=self.batch_size)
-    #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
-
-    #     predictions_torch = res.mean
-
-    #     # variances_torch = res.variance
-    #     # print(variances_torch, res.confidence_region())
-
-    #     # lower, upper = res.confidence_region()
-    #     # lower = 0.1 * lower.cpu().detach().numpy()
-    #     # upper = 0.1 * upper.cpu().detach().numpy()
-
-    #     # lower = lower.tolist()
-    #     # upper = upper.tolist()
-    #     # print(lower, upper)
-
-    #     predictions = res.mean.cpu().detach().numpy()
-    #     actual_values = self.test_F.cpu().detach().numpy()
-    #     plt.rcParams["figure.figsize"] = (30, 10)
-    #     plt.plot(predictions, color="blue", label="predictions", linewidth=0.2)
-    #     plt.plot(actual_values, color="red", label="actual values", linewidth=0.2)
-
-    #     plt.legend()
-    #     # plt.xlim(3000,4000)
-    #     # plt.ylim(0, 1.0)
-    #     # wandb.log({"all prediction": wandb.Image(plt)})
-    #     plt.show()
-    #     f_mae = torchmetrics.functional.mean_absolute_error(
-    #         torch.tensor(predictions), torch.tensor(actual_values)
-    #     )
-    #     f_mse = torchmetrics.functional.mean_squared_error(
-    #         torch.tensor(predictions), torch.tensor(actual_values)
-    #     )
-    #     print("Forces MAE: %5.4f" % f_mae.item())
-    #     print("Forces MSE: %5.4f" % f_mse.item())
-    #     # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
-
-
-    #     predicted_forces = predictions.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)       
-    #     # upper_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
-    #     # lower_forces = upper.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)      
-    #     actual_forces = self.test_F.numpy()
-    #     actual_forces = actual_forces.reshape(3, self.n_atoms, -1).transpose(2, 1, 0)
-
-    #     predicted_forces = np.concatenate( (predicted_forces[:,:,0], predicted_forces[:,:,1], predicted_forces[:,:,2]) )
-    #     # upper_forces = np.concatenate( (upper_forces[:,:,0], upper_forces[:,:,1], upper_forces[:,:,2]) )
-    #     # lower_forces = np.concatenate( (lower_forces[:,:,0], lower_forces[:,:,1], lower_forces[:,:,2]) )
-    #     actual_forces = np.concatenate( (actual_forces[:,:,0], actual_forces[:,:,1], actual_forces[:,:,2]) )
-
-    #     predicted_energies = predictions[-self.n_molecules :]
-    #     # upper_energies = upper[-self.n_molecules :]
-    #     # lower_energies = lower[-self.n_molecules :]
-
-    #     actual_energies = self.test_E
-
-    #     # l = self.test_shape[0]
-    #     pred_forces = predicted_forces
-    #     test_forces = actual_forces
-
-    #     pred_energies = predicted_energies
-    #     test_energies = actual_energies.cpu().detach().numpy()
-
-    #     # FMIN = self.forces_energies.min()
-    #     # FMAX = self.forces_energies.max()
-
-    #     FMIN = self.test_F.min()
-    #     FMAX = self.test_F.max()
-
-    #     x_axis = range(200)
-    #     # lower_energies = 0.1*np.ones(400)
-    #     # upper_energies = 0.2*np.ones(400)
-    #     # print(lower_energies, upper_energies)
-    #     plt.rcParams["figure.figsize"] = (30, 5)
-    #     plt.plot(pred_energies, color="blue", label="predictions", linewidth=0.4)
-    #     plt.plot(test_energies, color="red", label="actual values", linewidth=0.4)
-    #     # plt.fill_between(
-    #     #     x_axis,
-    #     #     pred_energies - lower_energies,
-    #     #     pred_energies + upper_energies,
-    #     #     color="b",
-    #     #     alpha=0.1,
-    #     #     label="Confidence of prediction",
-    #     # )
-    #     plt.title(f"Energies")
-    #     plt.legend()
-    #     # plt.axvspan(0, l, facecolor='purple', alpha=0.05)
-    #     # plt.ylim(FMIN, FMAX)
-    #     # wandb.log({"energy": wandb.Image(plt)})
-    #     plt.show()
-
-    #     # variances_torch = res.variance
-    #     # print(type(res.confidence_region()))
-
-    #     x_axis = np.concatenate(
-    #         (
-    #             np.arange(0, self.n_molecules, 100),
-    #             np.arange(0, self.n_molecules, 100),
-    #             np.arange(0, self.n_molecules, 100),
-    #         )
-    #     )
-
-    #     full_x = np.arange(0, 3 * self.n_molecules, 100).tolist()
-    #     # lower_forces = pred_forces - lower_forces
-    #     # upper_forces = pred_forces + upper_forces
-
-    #     x_axis_forces = np.arange(3 * self.n_molecules).tolist()
-
-    #     mol = self.test_traj[0]
-    #     plt.rcParams["figure.figsize"] = (30, 5)
-    #     l = self.n_molecules
-    #     for fatom in range(self.n_atoms):
-
-    #         plt.plot(
-    #             pred_forces[:, fatom], color="blue", label="predictions", linewidth=0.3
-    #         )
-    #         plt.plot(
-    #             test_forces[:, fatom], color="red", label="actual values", linewidth=0.3
-    #         )
-
-    #         # print(lower_forces[:,fatom],upper_forces[:,fatom])
-
-    #         # plt.fill_between(
-    #         #     x_axis_forces,
-    #         #     lower_forces[:,fatom],
-    #         #     upper_forces[:,fatom],
-    #         #     color="b",
-    #         #     alpha=0.1,
-    #         #     label="Confidence of prediction"
-    #         # )
-
-    #         plt.title(f"Forces, atom {fatom} : {mol[fatom].symbol}")
-    #         plt.legend()
-    #         plt.axvspan(0, l, facecolor="purple", alpha=0.05)
-    #         plt.axvspan(l, 2 * l, facecolor="green", alpha=0.05)
-    #         plt.axvspan(2 * l, 3 * l, facecolor="orange", alpha=0.05)
-    #         plt.ylim(FMIN, FMAX)
-    #         plt.text(l / 2, FMAX / 2, r"$F_x$", fontsize=44, alpha=0.1)
-    #         plt.text(3 * l / 2, FMAX / 2, r"$F_y$", fontsize=44, alpha=0.1)
-    #         plt.text(5 * l / 2, FMAX / 2, r"$F_z$", fontsize=44, alpha=0.1)
-    #         # wandb.log({f"atom {fatom} : {mol[fatom].symbol}": wandb.Image(plt) })
-    #         # plt.xticks(full_x, x_axis) # check(there's some error)
-
-    #         plt.show()
-            
-    #         self.f_mae = torchmetrics.functional.mean_absolute_error(
-    #             torch.tensor(pred_forces[:, fatom]), torch.tensor(test_forces[:, fatom])
-    #         )
-    #         self.f_mse = torchmetrics.functional.mean_squared_error(
-    #             torch.tensor(pred_forces[:, fatom]), torch.tensor(test_forces[:, fatom])
-    #         )
-    #         print("Forces MAE: %5.4f" % self.f_mae.item())
-    #         print("Forces MSE: %5.4f" % self.f_mse.item())
-    #         # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
-
-    #     return
-    
-
-    # def predict_and_plot_forces_r(self):
-
-    #         # if self.hparams["device"] == "gpu":
-    #         #     self.model_f = self.model_f.cuda()  # PL moves params to cpu (what a mess!)
-
-    #         for idx, model in enumerate(self.ag_force_model.models): 
-
-    #             test = TensorDataset(self.fdm.test_DX, self.fdm.test_F)
-    #             test_dl = DataLoader(test, batch_size=self.batch_size)
-    #             res = self.trainer_f.predict(self.model_f, test_dl)[0]
-
-    #             predictions_torch = res.mean
-
-    #             print(self.test_F.shape)
-
-
-    #             predictions = res.mean.cpu().detach().numpy()
-    #             actual_values = self.fdm.test_F.cpu().detach().numpy()
-    #             plt.rcParams["figure.figsize"] = (30, 10)
-
-    #             predictions_xyz = np.concatenate( (predictions[0::3], predictions[1::3], predictions[2::3]))
-    #             actual_values_xyz = np.concatenate( (actual_values[0::3], actual_values[1::3], actual_values[2::3]))
-
-    #             plt.plot(predictions_xyz, color="blue", label="predictions", linewidth=0.4)
-    #             plt.plot(actual_values_xyz, color="red", label="actual values", linewidth=0.4)
-
-    #             plt.legend()
-    #             # plt.xlim(3000,4000)
-    #             # plt.ylim(0, 1.0)
-    #             # wandb.log({"all prediction": wandb.Image(plt)})
-    #             plt.show()
-    #             f_mae = torchmetrics.functional.mean_absolute_error(
-    #                 torch.tensor(predictions), torch.tensor(actual_values)
-    #             )
-    #             f_mse = torchmetrics.functional.mean_squared_error(
-    #                 torch.tensor(predictions), torch.tensor(actual_values)
-    #             )
-    #             print("Forces MAE: %5.4f" % f_mae.item())
-    #             print("Forces MSE: %5.4f" % f_mse.item())
-    #         # print("Cumulative uncertainty: %5.4f" % np.sum(upper_forces[:,fatom] - lower_forces[:,fatom]) )
-
-
-    #         return
-
-
-
     def predict_forces_single_snapshot_r(self, snapshot, atomic_groups=None):
 
             # print(np.any(self.last_calculated_snapshot.positions != snapshot.positions))
@@ -436,22 +185,22 @@ class FandePredictor:
             # Bug from PyTorch, it's necessary to clean cache with .train() call when moving to another device: 
             # https://github.com/cornellius-gp/gpytorch/issues/1619
 
-            remove_cache_energy_model = False
-            if model.device != self.energy_model_device:
-                remove_cache_energy_model = True
 
-            print("Energy model device: ", self.energy_model.device)
-            model = model.to(self.energy_model_device)
+            # print("Energy model device: ", self.energy_model.device)
+            model.to(self.energy_model_device)
             x_sum = X.sum(axis=-2).to(self.energy_model_device)
             
-            if remove_cache_energy_model:
+            if model.device != self.energy_model_device:
+                # this is related to the issue that gpytorch does not move the cache to the device properly
+                print("removing cache for energy model (THIS IS EXPENSIVE) ")
                 model.train()
                 model.eval()
+                print("Cache moved to the proper device.")
 
             time_start_prediction = time.time()
 
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                res = model(x_sum.to(self.energy_model_device)) 
+                res = model(x_sum) 
 
             time_end_prediction = time.time()
 
@@ -474,7 +223,7 @@ class FandePredictor:
 
     def test_errors(self, view_worst_atoms=False):
         """
-        Provides test errors metrics for the models.
+        Provides test errors metrics for the models. SHOULD BE REMOVED FROM PREDICTOR AND MOVED TO A SEPARATE CLASS.
 
         Parameters
         ----------
@@ -605,62 +354,6 @@ class FandePredictor:
         return per_model_RMSE, per_model_MAE
 
 
-    # def predict_energy_single(self,snapshot):
-    #     # Check with XTB values:
-    #     # e_ = self.get_xtb_energy(snapshot)
-    #     # e_var_ = np.zeros_like(e_)
-
-    #     e_ = 0.0
-    #     e_var_ = 0.0
-
-    #     return e_, e_var_  
-
-
-    # def predict_forces_single(self, snapshot):
-
-    #     x, dx = self.soap_single(snapshot)
-
-    #     # dx = dx.view(3*self.n_atoms,-1).transpose(0,1)
-    #     # dx = dx[:,:-1, :].squeeze()
-
-    #     y_dummy = torch.zeros(3*self.n_atoms)
-
-    #     test = TensorDataset(dx, y_dummy)
-    #     test_dl = DataLoader(test, batch_size=self.batch_size)
-    #     res = self.trainer_f.predict(self.model_f, test_dl)[0]
-
-    #     predictions_torch = res.mean
-    #     # variances_torch = res.variance
-
-    #     f_ = predictions_torch.cpu().detach().numpy()
-    #     # f_var_ = variances_torch.cpu().detach().numpy()
-
-    #     f_ = f_.reshape(3, self.n_atoms).transpose(1, 0)
-    #     # f_var_ = f_var_.reshape(3, self.n_atoms).transpose(1, 0)     
-
-    #     # f_ = f_.reshape(self.n_atoms, 3)
-    #     # f_var_ = f_var_.reshape(self.n_atoms, 3)
-    #     #
-    #     # print("Normalizing factor", self.fdm.normalizing_factor)
-
-    #     # moved to the PredictorASE:
-    #     # f_ = f_ * self.fdm.normalizing_factor * Hartree / Bohr
-    #     # f_var_ = f_var_ * self.fdm.normalizing_factor * Hartree / Bohr
-
-    #     # f_var_ = 0.0
-
-    #     # f_ = f_ * self.fdm.normalizing_factor
-    #     # f_var_ = f_var_ * self.fdm.normalizing_factor
-
-    #     # Check with XTB values:
-    #     # f_ = self.get_xtb_forces(snapshot)
-    #     # f_var_ = np.zeros_like(f_)
-
-
-    #     return f_, f_var_
-
-
-
     # def get_xtb_energy(self, atoms):
 
     #     atoms_ = atoms.copy()
@@ -686,6 +379,9 @@ class FandePredictor:
 
     def move_models_to_device(self, device):
         #to add: move also ag_models to device...
+
+        if str(device)[0:4]=='cuda' and not str(device)[-1].isdigit():
+            raise ValueError("Please provide a cuda device with a specific id, e.g. cuda:0")
 
         self.energy_model_device = device
 
