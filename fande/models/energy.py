@@ -251,15 +251,25 @@ class EnergyModel(LightningModule):
         self.trainer = None 
         self.energy_model_hparams = hparams['energy_model_hparams']
 
-        trainer = Trainer(
-                accelerator='gpu',
-                # devices=2, 
-                devices=[self.gpu_id], 
-                max_epochs=self.energy_model_hparams['num_epochs'], 
-                precision=32,
-                # strategy="deepspeed",
-                log_every_n_steps=1000
-                )
+        if torch.cuda.is_available():
+            trainer = Trainer(
+                    accelerator='gpu',
+                    # devices=2, 
+                    devices=[self.gpu_id], 
+                    max_epochs=self.energy_model_hparams['num_epochs'], 
+                    precision=32,
+                    # strategy="deepspeed",
+                    log_every_n_steps=1000
+                    )
+        else:
+            trainer = Trainer(
+                    accelerator='cpu',
+                    # devices=2,  
+                    max_epochs=self.energy_model_hparams['num_epochs'], 
+                    precision=32,
+                    # strategy="deepspeed",
+                    log_every_n_steps=1000
+                    )
 
         self.trainer = trainer
         self.hparams.update(hparams)

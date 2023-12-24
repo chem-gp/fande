@@ -272,7 +272,7 @@ class ModelForces(LightningModule):
         # wandb.log({f"loss_{self.id}": loss})
         # wandb.log({"loss": loss})
         # self.log("loss", loss, prog_bar=True, on_step=True, on_epoch=True) # unfortunately slows down the training
-
+        self.log("loss", loss, prog_bar=True) #
         return {'loss': loss}
 
     def on_train_step_end(self, outputs) -> None:
@@ -355,13 +355,22 @@ class GroupModelForces(LightningModule):
         self.per_model_hparams = hparams['per_model_hparams']
 
         for idx, model in enumerate(self.models):
-            trainer = Trainer(
-                accelerator='gpu',
-                # devices=1, 
-                devices=[self.gpu_id], 
-                max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
-                precision=32
-                )
+            if torch.cuda.is_available():
+                trainer = Trainer(
+                    accelerator='gpu',
+                    # devices=1, 
+                    devices=[self.gpu_id], 
+                    max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
+                    precision=32
+                    )
+            else:
+                trainer = Trainer(
+                    accelerator='cpu',
+                    # devices=1, 
+                    max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
+                    precision=32
+                    )
+            
             self.trainers.append(trainer)
 
         self.hparams.update(hparams)
