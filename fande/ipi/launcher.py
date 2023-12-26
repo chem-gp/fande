@@ -2,7 +2,9 @@
 import os
 from ase import io
 
-import joblib
+from joblib import Parallel, delayed
+
+from .drivers import make_xtb_client
 
 IPI_PATH = os.path.expanduser("~/repos/i-pi/")
 
@@ -18,7 +20,7 @@ IPI_RESTART_SCRIPT = """
 source ~/repos/i-pi/env.sh
 cd $1
 rm EXIT
-nohup i-pi RESTART > OUTPUT.log 2>&1 &
+nohup i-pi RESTART >> OUTPUT.log 2>&1 &
 """
 
 
@@ -31,7 +33,8 @@ def launch(
         calculator: str,
         num_instances: int,
         calc_dir: str,
-        input_xml_str: str
+        input_xml_str: str,
+        ipi_port: int,
         ):
     
         calc_dir = os.path.abspath(calc_dir)
@@ -41,6 +44,9 @@ def launch(
         # print("Working directory: ", os.getcwd())
 
         io.write(calc_dir + "/init.xyz", init_structure, format="extxyz")
+        # io.write(calc_dir + "/init.cif", init_structure, format="cif")
+        io.write(calc_dir + "/POSCAR", init_structure, format="vasp")
+        
         with open(calc_dir + "/input.xml","w+") as f:
                 f.writelines(input_xml_str)
 
@@ -59,6 +65,14 @@ def launch(
 
         print("Launched! Please manually check if i-pi is running.")
 
+        K = num_instances
+        # gpu_id_list = []
+        # gpu_id_list = [0, 1, 2, 3, 4, 5, 6, 7] * 2
+        # K=41
+        atoms = init_structure.copy()
+
+        print("Starting clients with joblib...")
+        status = Parallel(n_jobs=K, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, K)) 
 
 
         return 0
