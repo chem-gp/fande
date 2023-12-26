@@ -24,17 +24,10 @@ nohup i-pi RESTART >> OUTPUT.log 2>&1 &
 """
 
 
-def create_calculator(i):
-        pass
-
-
-def launch(
+def launch_server(
         init_structure,
-        calculator: str,
-        num_instances: int,
         calc_dir: str,
         input_xml_str: str,
-        ipi_port: int,
         ):
     
         calc_dir = os.path.abspath(calc_dir)
@@ -65,13 +58,27 @@ def launch(
 
         print("Launched! Please manually check if i-pi is running.")
 
-        K = num_instances
+        return 0
+
+
+def launch_drivers(
+        init_structure,
+        calculator: str,
+        num_instances: int,
+        calc_dir: str,
+        ipi_port: int,
+        model_file=None,
+        ):
+
         # gpu_id_list = []
-        # gpu_id_list = [0, 1, 2, 3, 4, 5, 6, 7] * 2
-        # K=41
+        # gpu_id_list = [0, 1, 2, 3, 4, 5, 6, 7] 
         atoms = init_structure.copy()
         print("Starting clients with joblib...")
-        status = Parallel(n_jobs=K, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, K)) 
+
+        status = Parallel(
+                n_jobs=num_instances, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, num_instances)
+                ) 
+        
         return status
 
 def exit_calculation(calc_dir):

@@ -24,6 +24,7 @@ def make_xtb_client(calc_dir, idx, atoms, ipi_port):
 
         calc_xtb = XTB(method='GFN-FF')
         atoms_copy = FandeAtomsWrapper(atoms_copy)
+        atoms_copy.bookkeeping = True
 
         atoms_copy.calc = calc_xtb
         print("Calculator is set up!")
