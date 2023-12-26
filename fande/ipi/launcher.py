@@ -4,6 +4,27 @@ from ase import io
 
 import joblib
 
+IPI_PATH = os.path.expanduser("~/repos/i-pi/")
+
+IPI_LAUNCH_SCRIPT = """
+#!/bin/bash
+source ~/repos/i-pi/env.sh
+cd $1
+nohup i-pi input.xml > OUTPUT.log 2>&1 &
+"""
+
+IPI_RESTART_SCRIPT = """
+#!/bin/bash
+source ~/repos/i-pi/env.sh
+cd $1
+rm EXIT
+nohup i-pi RESTART > OUTPUT.log 2>&1 &
+"""
+
+
+def create_calculator(i):
+        pass
+
 
 def launch(
         init_structure,
@@ -16,17 +37,20 @@ def launch(
         calc_dir = os.path.abspath(calc_dir)
         os.makedirs(calc_dir, exist_ok=True)
 
-        os.chdir(calc_dir)
-        print("Working directory: ", os.getcwd())
+        # os.chdir(calc_dir)
+        # print("Working directory: ", os.getcwd())
 
-        with open("input.xml","w+") as f:
+        io.write(calc_dir + "/init.xyz", init_structure, format="extxyz")
+        with open(calc_dir + "/input.xml","w+") as f:
                 f.writelines(input_xml_str)
 
-        io.write("init.xyz", init_structure, format="extxyz")
+        with open(calc_dir + "/launch.sh","w+") as f:
+                f.writelines(IPI_LAUNCH_SCRIPT)
 
-        # Run i-pi
-        # os.system("source ~/repos/i-pi/env.sh; which i-pi >> OUTPUT.log")
-
+        print("Launching i-pi...")
+        print(f"bash {calc_dir}/launch.sh")
+        os.system(f"bash {calc_dir}/launch.sh {calc_dir}")
+       
         # Run multiple instances of fande_calc
         # with joblib
         # joblib.Parallel(n_jobs=num_instances)(
@@ -39,6 +63,16 @@ def launch(
 
         return 0
 
+def exit_calculation(calc_dir):
+        os.system(f"touch {calc_dir}EXIT")
+        return 0
 
 def kill_all():
-        pass
+        os.system("pkill -f i-pi")
+        return 0
+
+def restart(calc_dir):
+        with open(calc_dir + "/restart.sh","w+") as f:
+                f.writelines(IPI_RESTART_SCRIPT)
+        os.system(f"bash {calc_dir}/restart.sh {calc_dir}")
+        return 0

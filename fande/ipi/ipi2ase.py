@@ -1,5 +1,5 @@
 # Helper to convert i-PI style extended xyz to ASE style extended xyz/traj files
-
+# i-PI repository: https://github.com/i-pi/i-pi
 
 import numpy as np                                                                                                                                                                                  
 from ase.io import read,write  
