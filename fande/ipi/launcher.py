@@ -4,7 +4,7 @@ from ase import io
 
 from joblib import Parallel, delayed
 
-from .drivers import make_xtb_client
+from .drivers import make_xtb_client, make_fande_client
 
 IPI_PATH = os.path.expanduser("~/repos/i-pi/")
 
@@ -75,7 +75,7 @@ def launch(
         status = Parallel(n_jobs=K, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, K)) 
 
 
-        return 0
+        return status
 
 def exit_calculation(calc_dir):
         os.system(f"touch {calc_dir}EXIT")
