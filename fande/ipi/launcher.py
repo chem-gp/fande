@@ -70,11 +70,8 @@ def launch(
         # gpu_id_list = [0, 1, 2, 3, 4, 5, 6, 7] * 2
         # K=41
         atoms = init_structure.copy()
-
         print("Starting clients with joblib...")
         status = Parallel(n_jobs=K, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, K)) 
-
-
         return status
 
 def exit_calculation(calc_dir):
@@ -82,7 +79,8 @@ def exit_calculation(calc_dir):
         return 0
 
 def kill_all():
-        os.system("pkill -f i-pi")
+        # os.system("pkill -f i-pi")
+        os.system("kill -9 $(pgrep -f i-pi)")
         return 0
 
 def restart(calc_dir):
