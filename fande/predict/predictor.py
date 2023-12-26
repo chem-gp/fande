@@ -46,10 +46,10 @@ class FandePredictor:
 
 
         self.energy_model = energy_model
-        self.energy_model_device = torch.device('cuda')
+        self.energy_model_device = torch.device('cuda:0')
 
         self.ag_force_model = atomic_group_force_model
-        self.ag_force_model_device = torch.device('cuda')
+        self.ag_force_model_device = torch.device('cuda:0')
         self.ag_force_model_devices = [0]
 
 
@@ -104,22 +104,23 @@ class FandePredictor:
                 # print("Atomic group force model is not defined. Cannot predict forces. Returning zeros.")
                 return forces, forces_variance
 
+            print("Predicting forces...")
+
             for idx, model in enumerate(self.ag_force_model.models):              
 
                 # res = trainer_f.predict(model, test_dl)[0]
 
-                if self.device == "gpu":
-                    model = model.cuda()
+                if model.device != self.ag_force_model_device:
+                    # this is related to the issue that gpytorch does not move the cache to the device properly
+                    print("removing cache for forces model (THIS IS EXPENSIVE) ")
+                    model.train()
                     model.eval()
-                    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                        res = model(DX_grouped[idx].cuda()) # should you move to a device with specific id? for now it works...
-                
-                if self.device == "cpu":
-                    model = model.cpu()
-                    model.eval()
-                    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                        res = model(DX_grouped[idx].cpu())
+                    print("Cache moved to the proper device.")
         
+
+                with torch.no_grad(), gpytorch.settings.fast_pred_var():
+                    res = model(DX_grouped[idx].cpu())
+
                 # predictions_torch = res.mean
 
                 predictions = res.mean.cpu().detach().numpy()
@@ -392,6 +393,8 @@ class FandePredictor:
         self.energy_model.model.likelihood.train()
         self.energy_model.model.model.eval()
         self.energy_model.model.likelihood.eval()
+
+        self.ag_force_model_device = device
         return
 
 

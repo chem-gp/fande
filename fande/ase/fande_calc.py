@@ -116,16 +116,16 @@ class FandeCalc(Calculator):
 
 
         # comparing with supporting calculation
-        if self.supporting_calc is not None:
-            a_ = self.atoms.copy()
-            a_.calc = self.supporting_calc
-            supporting_forces = a_.get_forces()
-            self.forces_errors.append(forces-supporting_forces)
-            self.forces_errors_max.append( np.max(np.abs(forces-supporting_forces)) )
+        # if self.supporting_calc is not None:
+        #     a_ = self.atoms.copy()
+        #     a_.calc = self.supporting_calc
+        #     supporting_forces = a_.get_forces()
+        #     self.forces_errors.append(forces-supporting_forces)
+        #     self.forces_errors_max.append( np.max(np.abs(forces-supporting_forces)) )
 
 
-            if self.forces_errors_plot_file is not None and len(self.forces_errors)%self.forces_errors_loginterval==0:
-                self.make_forces_errors_plot(plot_show=False, plot_file=self.forces_errors_plot_file)
+        #     if self.forces_errors_plot_file is not None and len(self.forces_errors)%self.forces_errors_loginterval==0:
+        #         self.make_forces_errors_plot(plot_show=False, plot_file=self.forces_errors_plot_file)
 
 
         self.results["energy"] = self.energy
@@ -164,12 +164,12 @@ class FandeCalc(Calculator):
         self.update(atoms)
         return self.energy
 
-    def get_forces_variance(self, atoms):
+    def get_potential_energy_variance(self, atoms):
         self.update(atoms)
         return self.energy_variance.copy()
 
-    def get_forces_errors(self):
-        return np.array(self.forces_errors)
+    # def get_forces_errors(self):
+    #     return np.array(self.forces_errors)
     
     def set_forces_errors_plot_file(self, forces_errors_plot_file, loginterval=10):
         self.forces_errors_plot_file = forces_errors_plot_file
