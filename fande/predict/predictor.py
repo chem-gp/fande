@@ -395,6 +395,16 @@ class FandePredictor:
         self.energy_model.model.likelihood.eval()
 
         self.ag_force_model_device = device
+
+        for model in self.ag_force_model.models:
+            model.model = model.model.to(device)
+            model.model.likelihood = model.model.likelihood.to(device)
+            # model.model = model.model.model.to(device)
+            model.model.train()
+            model.model.likelihood.train()
+            model.model.eval()
+            model.model.likelihood.eval()
+
         return
 
 
