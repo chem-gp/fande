@@ -156,6 +156,8 @@ class GroupModelForces(LightningModule):
                  ) -> None:
         super().__init__()
 
+        seed_everything(42, workers=True)
+
         self.models = models
         self.train_data_loaders = train_data_loaders
 
@@ -172,14 +174,16 @@ class GroupModelForces(LightningModule):
                     # devices=1, 
                     devices=[self.gpu_id], 
                     max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
-                    precision=32
+                    precision=32,
+                    deterministic=True
                     )
             else:
                 trainer = Trainer(
                     accelerator='cpu',
                     # devices=1, 
                     max_epochs=self.per_model_hparams[model.id]['num_epochs'], 
-                    precision=32
+                    precision=32,
+                    deterministic=True
                     )
             
             self.trainers.append(trainer)

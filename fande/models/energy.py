@@ -137,6 +137,8 @@ class EnergyModel(LightningModule):
             gpu_id=None):
         super().__init__()
 
+        seed_everything(42, workers=True)
+
         self.train_data_loader = energy_train_data_loader
         raw_energy_model = RawEnergyModel(
             train_x = energy_train_data_loader.dataset[:][0],
@@ -157,7 +159,8 @@ class EnergyModel(LightningModule):
                     max_epochs=self.energy_model_hparams['num_epochs'], 
                     precision=32,
                     # strategy="deepspeed",
-                    log_every_n_steps=1000
+                    log_every_n_steps=1000,
+                    deterministic=True
                     )
         else:
             trainer = Trainer(
@@ -166,7 +169,8 @@ class EnergyModel(LightningModule):
                     max_epochs=self.energy_model_hparams['num_epochs'], 
                     precision=32,
                     # strategy="deepspeed",
-                    log_every_n_steps=1000
+                    log_every_n_steps=1000,
+                    deterministic=True
                     )
         self.trainer = trainer
         self.hparams.update(hparams)
