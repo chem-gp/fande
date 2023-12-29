@@ -105,10 +105,10 @@ class RawEnergyModel(LightningModule):
         '''defines model optimizer'''
             # Use the adam optimizer
         optimizer = Adam(self.parameters(), lr=self.learning_rate)
+        # # return optimizer
+        scheduler = MultiStepLR(optimizer, milestones=[1_000, 10_000], gamma=0.1)
+        return [optimizer], [scheduler]
 
-        # scheduler = MultiStepLR(optimizer, milestones=[100, 1_000, 10_000], gamma=0.1)
-        # return [optimizer], [scheduler]
-        return optimizer
 
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
         """wrapper around lightning function"""

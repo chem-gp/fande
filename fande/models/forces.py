@@ -6,6 +6,7 @@ import gpytorch
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 from torch.optim import Adam
+from torch.optim.lr_scheduler import MultiStepLR
 
 from .sv_gps import SVGPModel
 from .exact_gps import ExactGPModel
@@ -116,7 +117,9 @@ class ModelForces(LightningModule):
         '''defines model optimizer'''
             # Use the adam optimizer
         optimizer = Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        # # return optimizer
+        scheduler = MultiStepLR(optimizer, milestones=[1_000, 10_000], gamma=0.1)
+        return [optimizer], [scheduler]
 
     # def validation_step(self, batch, batch_idx):
     #     """Compute validation loss."""
