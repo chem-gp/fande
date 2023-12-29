@@ -1,23 +1,9 @@
+
+import fande
+
 import torch
 import gpytorch
 import numpy as np
-
-from gpytorch.kernels import (
-    RBFKernel,
-    ScaleKernel,
-    LinearKernel,
-    AdditiveKernel,
-    MultitaskKernel,
-    PolynomialKernel,
-    MaternKernel,
-)
-from gpytorch.means import ZeroMean, ConstantMean
-
-from gpytorch.lazy import MatmulLazyTensor
-
-from .my_kernels import CustomKernel
-
-from gpytorch.models import ExactGP
 
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 
@@ -25,72 +11,21 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 
 
-from gpytorch.models import ApproximateGP
-from gpytorch.variational import (
-    CholeskyVariationalDistribution,
-    MeanFieldVariationalDistribution,
-    DeltaVariationalDistribution,
-)
-from gpytorch.variational import VariationalStrategy
-
-
-# from .exact_gps import ExactGPModelEnergies
-
-from .sv_gps import SVGPModelEnergies
-
+from .sv_gps import SVGPModel
+from .exact_gps import ExactGPModel
 # from .deep_gps import DeepGP_Model
 
-from gpytorch.mlls import DeepApproximateMLL
 
-import fande
-
-
-
-class ExactGPModelEnergy(ExactGP, LightningModule):
-    def __init__(
-        self, train_X, train_Y, likelihood, soap_dim=None
-    ): 
-        super().__init__(train_X, train_Y, likelihood) # the old-style super(ExactGPModel, self) was causing error!
-        
-        print(self.hparams)
-
-        if train_X is not None:
-            self.soap_dim = train_X.shape[-1]
-        else:
-            self.soap_dim =soap_dim
-
-        # self.mean_module = ZeroMean()
-        self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )
-        # self.covar_module = ScaleKernel( RBFKernel(ard_num_dims=self.soap_dim) )
-        # self.covar_module = ScaleKernel( RBFKernel() )
-        # self.covar_module = LinearKernel()
-        # self.mean_module = ConstantMean()
-        self.mean_module = ZeroMean()
-        # self.covar_module = MaternKernel(ard_num_dims=self.soap_dim)#LinearKernel()
-        # self.covar_module = ScaleKernel( MaternKernel(ard_num_dims=self.soap_dim) )#LinearKernel()
-
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-
-
+try:
+    import wandb
+except ImportError:
+    print("wandb not installed, skipping import")
 
 
 class RawEnergyModel(LightningModule):
     r"""
-    Batch independent multioutput exact gp model.
-
-    .. math::
-        \begin{equation}
-        k_{i}(\mathbf{x}, \mathbf{x'}) 
-        \end{equation}
-
-    .. note::
-        Simple note.
+    ...
     """
-
     def __init__(
             self, 
             train_x=None, 
@@ -119,7 +54,7 @@ class RawEnergyModel(LightningModule):
         self.train_y = train_y
 
         if self.hparams['energy_model_hparams']['model_type'] == "exact":
-            self.model = ExactGPModelEnergy(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
+            self.model = ExactGPModel(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
             # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
             self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
                 self.likelihood, self.model)
@@ -132,14 +67,13 @@ class RawEnergyModel(LightningModule):
             random_indices = perm[:num_ind_points]
             inducing_points = self.train_x[random_indices, :]
             print("Training with inducing points: ", inducing_points.shape)
-            self.model = SVGPModelEnergies(inducing_points=inducing_points)
+            self.model = SVGPModel(inducing_points=inducing_points)
             self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
             self.mll = gpytorch.mlls.PredictiveLogLikelihood( self.likelihood, self.model, num_data=self.train_y.size(0), beta=mll_beta )
 
 
         self.learning_rate = self.hparams['energy_model_hparams']['learning_rate']
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
-
 
    
     def forward(self, input_):
@@ -148,7 +82,6 @@ class RawEnergyModel(LightningModule):
             output = self.model(input_)           
             res = self.likelihood(output) #.mean.cpu().detach().numpy()
         return res
-
 
     def training_step(self, batch, batch_idx: int , dataloader_idx: int = None):
         """Compute training loss."""
@@ -159,23 +92,6 @@ class RawEnergyModel(LightningModule):
         # wandb.log({"loss": loss})
         self.log("loss", loss, prog_bar=True) # unfortunately slows down the training
         return {'loss': loss}
-
-    # def on_train_step_end(self, outputs) -> None:
-    #     # loss = sum(output['loss'] for output in outputs) / len(outputs)
-    #     # print("loss output...")
-
-    # # def training_step(self, batch, batch_idx):
-    # #     '''needs to return a loss from a single batch'''
-    # #     # _, loss, acc = self._get_preds_loss_accuracy(batch)
-    # #     train_x, train_y = batch
-
-    # #     output = self(train_x)
-    # #     loss = -self.mll(output, train_y) ##???
-
-    # #     # Log loss and metric
-    # #     # self.log('train_loss, loss)
-    # #     # self.log('train_accuracy', acc)
-    # #     return loss
 
     def test_step(self, batch, batch_idx):
         """Compute testing loss."""
@@ -195,15 +111,6 @@ class RawEnergyModel(LightningModule):
         # return [optimizer], [scheduler]
         return optimizer
 
-    # def validation_step(self, batch, batch_idx):
-    #     """Compute validation loss."""
-    #     input_, target = batch
-    #     output = self(input_)
-
-    #     loss = -self.mll(output, target)
-
-    #     return {'val_loss': loss}
-
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
         """wrapper around lightning function"""
         return self(batch[0])
@@ -216,8 +123,6 @@ class RawEnergyModel(LightningModule):
             reshaped prediction
         """
         return self(input_).mean.reshape(-1, len(self.atomic_group), 3)
-
-
 
 
 class EnergyModel(LightningModule):
@@ -234,23 +139,17 @@ class EnergyModel(LightningModule):
         super().__init__()
 
         self.train_data_loader = energy_train_data_loader
-
         raw_energy_model = RawEnergyModel(
             train_x = energy_train_data_loader.dataset[:][0],
             train_y = energy_train_data_loader.dataset[:][1],
             hparams = hparams)
-
         self.model = raw_energy_model
-
-
         if gpu_id is not None:
             self.gpu_id = gpu_id
         else:
             self.gpu_id = 0
-
         self.trainer = None 
         self.energy_model_hparams = hparams['energy_model_hparams']
-
         if torch.cuda.is_available():
             trainer = Trainer(
                     accelerator='gpu',
@@ -270,7 +169,6 @@ class EnergyModel(LightningModule):
                     # strategy="deepspeed",
                     log_every_n_steps=1000
                     )
-
         self.trainer = trainer
         self.hparams.update(hparams)
         self.save_hyperparameters()
