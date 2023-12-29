@@ -1,6 +1,4 @@
 
-import fande
-
 import torch
 import gpytorch
 import numpy as np
@@ -21,6 +19,7 @@ try:
 except ImportError:
     print("wandb not installed, skipping import")
 
+import fande
 
 class RawEnergyModel(LightningModule):
     r"""

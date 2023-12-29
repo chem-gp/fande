@@ -14,6 +14,8 @@ from gpytorch.variational import CholeskyVariationalDistribution, MeanFieldVaria
 
 import numpy as np
 
+from pytorch_lightning import LightningModule
+
 
 class SVGPModel(ApproximateGP):
         def __init__(self, inducing_points):

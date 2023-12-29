@@ -47,12 +47,18 @@ class ModelForces(LightningModule):
         if train_x is not None:
             self.soap_dim = train_x.shape[-1]  
 
-        if self.hparams['forces_model_hparams']['model_type'] == "exact":
+        self.atomic_group = atomic_group
+        ## Store the training parameters inside the model:
+        self.train_x = train_x
+        self.train_y = train_y
+        self.id = id
+
+        if self.hparams['per_model_hparams'][id]['forces_model_hparams']['model_type'] == "exact":
             self.model = ExactGPModel(self.train_x, self.train_y, self.likelihood, soap_dim=self.soap_dim)    
             # self.model =  DKLModelForces(train_x, train_y, self.likelihood, soap_dim=self.soap_dim)
             self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(
                 self.likelihood, self.model)
-        elif self.hparams['forces_model_hparams']['model_type'] == "variational_inducing_points":
+        elif self.hparams['per_model_hparams'][id]['forces_model_hparams']['model_type'] == "variational_inducing_points":
             mll_beta = 0.1
             num_ind_points = self.hparams['energy_model_hparams']['num_inducing_points']
             # random_indices = torch.randint(low=0, high=self.train_x.shape[0], size=(num_ind_points,))
@@ -64,16 +70,11 @@ class ModelForces(LightningModule):
             self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
             self.mll = gpytorch.mlls.PredictiveLogLikelihood( self.likelihood, self.model, num_data=self.train_y.size(0), beta=mll_beta )
 
-
-        self.atomic_group = atomic_group
-        ## Store the training parameters inside the model:
-        self.train_x = train_x
-        self.train_y = train_y
-        self.id = id
         # self.num_epochs = 10
         self.learning_rate = self.hparams['per_model_hparams'][id]['learning_rate']
         # self.precision = 32 
         self.save_hyperparameters(ignore=['train_x', 'train_y'])
+
         print("ModelForces initialized")
 
    
