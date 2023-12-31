@@ -123,6 +123,10 @@ class RawEnergyModel(LightningModule):
         """
         return self(input_).mean.reshape(-1, len(self.atomic_group), 3)
 
+# https://lightning.ai/docs/pytorch/stable/common/early_stopping.html#earlystopping-callback
+    # def validation_step(self, batch, batch_idx):
+    #     loss = ...
+    #     self.log("val_loss", loss)
 
 class EnergyModel(LightningModule):
     """
