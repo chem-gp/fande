@@ -75,9 +75,14 @@ def launch_drivers(
         atoms = init_structure.copy()
         print("Starting clients with joblib...")
 
-        status = Parallel(
-                n_jobs=num_instances, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, num_instances)
-                ) 
+        if calculator == "xtb":
+                status = Parallel(
+                        n_jobs=num_instances, prefer="processes")(delayed(make_xtb_client)(calc_dir, i, atoms, ipi_port) for i in range(0, num_instances)
+                        ) 
+        elif calculator == "fande":
+                status = Parallel(
+                        n_jobs=num_instances, prefer="processes")(delayed(make_fande_client)(calc_dir, i, atoms, ipi_port, model_file) for i in range(0, num_instances)
+                        )
         
         return status
 

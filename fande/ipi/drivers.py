@@ -48,8 +48,8 @@ def make_fande_client(calc_dir, idx, atoms, ipi_port, model_file):
         os.makedirs(temp_dir, exist_ok=True)
         os.chdir(temp_dir)
 
-        # for file in os.scandir(temp_dir):
-        #     os.remove(file.path)
+        for file in os.scandir(temp_dir):
+            os.remove(file.path)
 
         atoms_copy = atoms.copy()
 

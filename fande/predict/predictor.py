@@ -75,8 +75,10 @@ class FandePredictor:
             n_atoms = len(snapshot) 
             snapshot.wrap(eps=1e-8)
             # print( np.allclose(self.last_calculated_snapshot.positions, snapshot.positions))
+            time_invariants = 0
+            time_start = 0
 
-            if not np.allclose(self.last_calculated_snapshot.positions, snapshot.positions):
+            if not np.allclose(self.last_calculated_snapshot.positions, snapshot.positions) or True:
                 # print("Start invariants forces...")
                 # record start time
                 time_start = time.time()
@@ -117,11 +119,13 @@ class FandePredictor:
                     model.eval()
                     print("Cache moved to the proper device.")
         
+                print("Trying to predict forces with ...", DX_grouped)
 
                 with torch.no_grad(), gpytorch.settings.fast_pred_var():
                     res = model(DX_grouped[idx].cpu())
 
                 # predictions_torch = res.mean
+                print("Predicted forces...", res)
 
                 predictions = res.mean.cpu().detach().numpy()
 
